@@ -1,3 +1,6 @@
+.idea/
+.venv/
+__pycache__/
+*.pyc
 .env
-__pychache__/
-data/prices.db
+prices.db
