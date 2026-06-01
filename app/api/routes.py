@@ -48,3 +48,11 @@ def delete_product(product_name: str):
     return {
         "message": f"{product_name} removed"
     }
+
+@router.delete("/products")
+def clear_products():
+    products.clear()
+
+    return {
+        "message": "All products removed"
+    }
