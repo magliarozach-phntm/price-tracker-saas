@@ -1,6 +1,15 @@
 import sqlite3
 
-conn = sqlite3.connect("data/prices.db", check_same_thread=False)
+import sqlite3
+from pathlib import Path
+
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(exist_ok=True)
+
+DB_PATH = DATA_DIR / "prices.db"
+
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+
 cursor = conn.cursor()
 
 cursor.execute("""
