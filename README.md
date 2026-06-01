@@ -56,6 +56,12 @@ List all products
 ### POST /check
 Manually run price check
 
+### DELETE /products
+Clear all products in list
+
+### DELETE /products/{product_name}
+Delete singular product listings
+
 ---
 
 ## ⚙️ Setup
