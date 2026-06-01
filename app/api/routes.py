@@ -35,3 +35,16 @@ def check_all():
         results.append(result)
 
     return results
+
+@router.delete("/products/{product_name}")
+def delete_product(product_name: str):
+    global products
+
+    products = [
+        p for p in products
+        if p["name"] != product_name
+    ]
+
+    return {
+        "message": f"{product_name} removed"
+    }
