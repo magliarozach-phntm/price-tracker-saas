@@ -15,7 +15,7 @@ Buy here:
     msg["From"] = GMAIL_USER
     msg["To"] = GMAIL_USER
 
-    with smtplib.SMTP(GMAIL_SERVER, 587) as server:
+    with smtplib.SMTP(GMAIL_SERVER, 587, timeout=15) as server:
         server.starttls()
         server.login(GMAIL_USER, GMAIL_PASS)
         server.send_message(msg)
