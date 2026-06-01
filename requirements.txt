@@ -1,0 +1,7 @@
+schedule
+python-dotenv
+beautifulsoup4
+requests
+uvicorn
+django-scheduler
+fastapi
