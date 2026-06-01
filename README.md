@@ -1,23 +1,50 @@
-# Price Tracker SaaS (Python Backend Project)
+# 🛒 Price Tracker SaaS (FastAPI Backend)
 
-## Overview
-Automated price tracking system that monitors Amazon products and sends email alerts when prices drop below a target threshold.
+A backend system that tracks e-commerce product prices, stores historical data, and sends email alerts when prices drop below a target price.
 
-## Features
+---
+
+## 🚀 Features
+
+- Web scraping Amazon product prices
 - Multi-product tracking
-- Web scraping with BeautifulSoup
-- SQLite price history storage
-- Email alert system (SMTP)
-- Scheduled automation (cron-style)
+- SQLite database for price history
+- Email alerts (SMTP Gmail)
+- FastAPI REST API
+- Swagger API documentation
 
-## Tech Stack
+---
+
+## 🛠 Tech Stack
+
 - Python
+- FastAPI
 - SQLite
-- Requests / BeautifulSoup
-- SMTP (Gmail)
-- Schedule
+- Requests
+- BeautifulSoup
+- SMTP
 
-## Setup
+---
+
+## 📡 API Endpoints
+
+### GET /
+Health check
+
+### POST /products
+Add a product to track
+
+### GET /products
+List all products
+
+### POST /check
+Manually run price check
+
+---
+
+## ⚙️ Setup
+
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
