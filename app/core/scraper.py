@@ -7,8 +7,22 @@ HEADERS = {
 }
 
 def get_price(url: str) -> float:
-    response = requests.get(url, headers=HEADERS)
-    soup = BeautifulSoup(response.content, "html.parser")
+    print(f"Checking {url}...")
 
-    price_text = soup.find(class_="a-offscreen").get_text().strip()
-    return float(price_text.replace("$", ""))
+    response = requests.get(
+        url,
+        headers=HEADERS,
+        timeout=15
+    )
+    response.raise_for_status()
+
+    print("Request completed")
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    price_element = soup.find(class_="a-offscreen")
+
+    if price_element is None:
+        raise ValueError("Price element not found on page")
+
+    price_text = price_element.get_text().strip()
+    return float(price_text.replace("$", "").replace(",", ""))
