@@ -467,7 +467,8 @@ Planned development includes:
 - [x] Stock-state tracking
 - [x] APScheduler integration
 - [x] Automated test suite
-- [ ] Production verification of scheduled price checks
+- [x] Production verification of scheduled price checks
+- [x] Email notifications
 - [ ] Amazon price tracking
 - [ ] Additional retailer integrations
 - [ ] Historical price charts
