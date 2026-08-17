@@ -1,85 +1,107 @@
 from decimal import Decimal
-from urllib.parse import urlparse, urlunparse
-
-
-
-SUPPORTED_RETAILERS = {
-    "amazon.": "Amazon",
-}
+from urllib.parse import urlparse
 
 
 class ProductValidationError(ValueError):
     pass
 
 
+SUPPORTED_RETAILERS = {
+    "amazon.com": {
+        "name": "Amazon",
+        "tracking_supported": False,
+    },
+    "target.com": {
+        "name": "Target",
+        "tracking_supported": True,
+    },
+}
+
+
+def normalize_product_url(
+    url: str,
+) -> str:
+    url = url.strip()
+
+    if not url:
+        raise ProductValidationError(
+            "Product URL is required."
+        )
+
+    parsed = urlparse(url)
+
+    if parsed.scheme not in (
+        "http",
+        "https",
+    ):
+        raise ProductValidationError(
+            "Please enter a valid product URL."
+        )
+
+    normalized = parsed._replace(
+        fragment=""
+    )
+
+    return normalized.geturl()
+
+
+def get_retailer(
+    url: str,
+) -> str:
+    parsed = urlparse(url)
+
+    domain = parsed.netloc.lower()
+
+    if domain.startswith("www."):
+        domain = domain[4:]
+
+    for (
+        retailer_domain,
+        retailer_info,
+    ) in SUPPORTED_RETAILERS.items():
+
+        if (
+            domain == retailer_domain
+            or domain.endswith(
+                f".{retailer_domain}"
+            )
+        ):
+            return retailer_info["name"]
+
+    raise ProductValidationError(
+        "Currently supported retailers are "
+        "Target and Amazon."
+    )
+
+
 def validate_product_form(
     name: str,
     url: str,
     target_price: Decimal,
-):
+) -> dict:
     clean_name = name.strip()
-    clean_url = url.strip()
 
     if not clean_name:
         raise ProductValidationError(
             "Product name cannot be empty."
         )
 
-    if len(clean_name) > 255:
+    if target_price <= Decimal("0"):
         raise ProductValidationError(
-            "Product name must be 255 characters or fewer."
+            "Target price must be greater than zero."
         )
 
-    if target_price <= 0:
-        raise ProductValidationError(
-            "Target price must be greater than $0."
-        )
+    normalized_url = normalize_product_url(
+        url
+    )
 
-    if len(clean_url) > 1000:
-        raise ProductValidationError(
-            "Product URL is too long."
-        )
-
-    parsed = urlparse(clean_url)
-
-    if parsed.scheme not in {"http", "https"}:
-        raise ProductValidationError(
-            "Please enter a valid product URL."
-        )
-
-    if not parsed.netloc:
-        raise ProductValidationError(
-            "Please enter a valid product URL."
-        )
-
-    domain = parsed.netloc.lower()
-
-    retailer = None
-
-    for retailer_domain, retailer_name in SUPPORTED_RETAILERS.items():
-        if retailer_domain in domain:
-            retailer = retailer_name
-            break
-
-    if retailer is None:
-        raise ProductValidationError(
-            "This retailer is not supported yet. "
-            "MAG PriceWatch currently supports Amazon."
-        )
+    retailer = get_retailer(
+        normalized_url
+    )
 
     return {
         "name": clean_name,
-        "url": clean_url,
+        "url": normalized_url,
         "target_price": target_price,
         "retailer": retailer,
     }
-
-
-def normalize_product_url(url: str) -> str:
-    parsed = urlparse(url.strip())
-
-    clean = parsed._replace(
-        fragment="",
-    )
-
-    return urlunparse(clean)

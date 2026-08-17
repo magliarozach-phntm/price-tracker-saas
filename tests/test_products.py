@@ -109,7 +109,10 @@ def test_unsupported_retailer_rejected(
 
     assert response.status_code == 422
 
-    assert "not supported" in response.text.lower()
+    assert (
+            "currently supported retailers"
+            in response.text.lower()
+    )
 
 
 def test_edit_product(
