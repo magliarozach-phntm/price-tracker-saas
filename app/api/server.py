@@ -19,8 +19,6 @@ from app.services.scheduler.scheduler import (
     stop_scheduler,
 )
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from app.core.database import SessionLocal
-from app.models import User
 from app.web import templates
 from app.web.context import template_context
 
@@ -54,27 +52,12 @@ def not_found_handler(
     request: Request,
     exc: StarletteHTTPException,
 ):
-    current_user = None
-
-    user_id = request.session.get("user_id")
-
-    if user_id is not None:
-        db = SessionLocal()
-
-        try:
-            current_user = db.get(
-                User,
-                user_id,
-            )
-        finally:
-            db.close()
-
     return templates.TemplateResponse(
         request=request,
         name="errors/404.html",
         context=template_context(
             request=request,
-            current_user=current_user,
+            current_user=None,
         ),
         status_code=404,
     )
@@ -90,30 +73,16 @@ def internal_error_handler(
         exc_info=exc,
     )
 
-    current_user = None
-
-    user_id = request.session.get("user_id")
-
-    if user_id is not None:
-        db = SessionLocal()
-
-        try:
-            current_user = db.get(
-                User,
-                user_id,
-            )
-        finally:
-            db.close()
-
     return templates.TemplateResponse(
         request=request,
         name="errors/500.html",
         context=template_context(
             request=request,
-            current_user=current_user,
+            current_user=None,
         ),
         status_code=500,
     )
+
 HTTPS_ONLY = environ.get(
     "HTTPS_ONLY",
     "False",
