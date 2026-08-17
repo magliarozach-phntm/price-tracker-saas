@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from decimal import Decimal, InvalidOperation
@@ -15,9 +16,7 @@ logger = logging.getLogger(__name__)
 
 PRICE_SELECTORS = [
     '[data-test="product-price"]',
-    '[data-test="product-price"] span',
     '[data-test="current-price"]',
-    '[data-test="current-price"] span',
     '[data-test="offerPrice"]',
     '[itemprop="price"]',
 ]
@@ -26,7 +25,6 @@ PRICE_SELECTORS = [
 OUT_OF_STOCK_PHRASES = [
     "out of stock",
     "currently unavailable",
-    "not available",
     "sold out",
 ]
 
@@ -63,42 +61,183 @@ def _is_out_of_stock(
     )
 
 
-def _extract_price_from_text(
-    text: str,
+def _extract_decimal(
+    value,
 ) -> Decimal | None:
-    matches = re.findall(
-        r"\$([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
-        text,
-    )
-
-    if not matches:
+    if value is None:
         return None
 
-    for match in matches:
+    try:
+        return Decimal(
+            str(value)
+            .replace("$", "")
+            .replace(",", "")
+            .strip()
+        )
+
+    except (
+        InvalidOperation,
+        ValueError,
+    ):
+        return None
+
+
+def _find_price_from_json_ld(
+    soup,
+) -> Decimal | None:
+    scripts = soup.find_all(
+        "script",
+        type="application/ld+json",
+    )
+
+    for script in scripts:
+
+        if not script.string:
+            continue
+
         try:
-            return clean_price(
-                f"${match}"
+            data = json.loads(
+                script.string
             )
 
-        except (
-            InvalidOperation,
-            ValueError,
-        ):
+        except json.JSONDecodeError:
             continue
+
+        objects = (
+            data
+            if isinstance(data, list)
+            else [data]
+        )
+
+        for obj in objects:
+
+            if not isinstance(
+                obj,
+                dict,
+            ):
+                continue
+
+            offers = obj.get(
+                "offers"
+            )
+
+            if isinstance(
+                offers,
+                dict,
+            ):
+                price = (
+                    offers.get("price")
+                    or offers.get(
+                        "lowPrice"
+                    )
+                )
+
+                parsed = _extract_decimal(
+                    price
+                )
+
+                if parsed is not None:
+                    logger.info(
+                        "Target price found in JSON-LD | "
+                        "price=%s",
+                        parsed,
+                    )
+
+                    return parsed
+
+            elif isinstance(
+                offers,
+                list,
+            ):
+                for offer in offers:
+
+                    if not isinstance(
+                        offer,
+                        dict,
+                    ):
+                        continue
+
+                    price = (
+                        offer.get("price")
+                        or offer.get(
+                            "lowPrice"
+                        )
+                    )
+
+                    parsed = (
+                        _extract_decimal(
+                            price
+                        )
+                    )
+
+                    if parsed is not None:
+                        logger.info(
+                            "Target price found in JSON-LD offer | "
+                            "price=%s",
+                            parsed,
+                        )
+
+                        return parsed
 
     return None
 
 
-def _find_price(
+def _find_price_from_scripts(
     soup,
-    page_text: str,
 ) -> Decimal | None:
 
-    # ---------------------------------------------
-    # STRUCTURED / SELECTOR-BASED PRICE
-    # ---------------------------------------------
+    patterns = [
+        r'"current_retail"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
+        r'"currentRetail"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
+        r'"offer_price"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
+        r'"price"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
+    ]
+
+    for script in soup.find_all(
+        "script"
+    ):
+
+        script_text = (
+            script.string
+            or script.get_text()
+        )
+
+        if not script_text:
+            continue
+
+        for pattern in patterns:
+
+            match = re.search(
+                pattern,
+                script_text,
+            )
+
+            if match:
+                parsed = (
+                    _extract_decimal(
+                        match.group(1)
+                    )
+                )
+
+                if parsed is not None:
+                    logger.info(
+                        "Target price found in script data | "
+                        "pattern=%s | price=%s",
+                        pattern,
+                        parsed,
+                    )
+
+                    return parsed
+
+    return None
+
+
+def _find_price_from_selectors(
+    soup,
+) -> Decimal | None:
 
     for selector in PRICE_SELECTORS:
+
         element = soup.select_one(
             selector
         )
@@ -106,65 +245,58 @@ def _find_price(
         if element is None:
             continue
 
-        # Some structured elements store
-        # the price in an attribute.
         content = (
             element.get("content")
             or element.get("value")
         )
 
         if content:
-            try:
-                return clean_price(
-                    str(content)
-                )
+            parsed = _extract_decimal(
+                content
+            )
 
-            except (
-                InvalidOperation,
-                ValueError,
-            ):
-                pass
+            if parsed is not None:
+                return parsed
 
         text = element.get_text(
             " ",
             strip=True,
         )
 
-        if not text:
-            continue
-
-        price = _extract_price_from_text(
-            text
+        match = re.search(
+            r"\$([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+            text,
         )
 
-        if price is not None:
-            logger.info(
-                "Target price found | "
-                "selector=%s | price=%s",
-                selector,
-                price,
+        if match:
+            return _extract_decimal(
+                match.group(1)
             )
 
-            return price
+    return None
 
-    # ---------------------------------------------
-    # FALLBACK: PAGE TEXT
-    # ---------------------------------------------
 
-    price = _extract_price_from_text(
-        page_text
+def _find_price(
+    soup,
+) -> Decimal | None:
+
+    price = _find_price_from_json_ld(
+        soup
     )
 
     if price is not None:
-        logger.info(
-            "Target price found using text fallback | "
-            "price=%s",
-            price,
-        )
-
         return price
 
-    return None
+    price = _find_price_from_scripts(
+        soup
+    )
+
+    if price is not None:
+        return price
+
+    return _find_price_from_selectors(
+        soup
+    )
 
 
 def scrape_target(
@@ -191,36 +323,29 @@ def scrape_target(
             "final_url=%s | "
             "content_length=%s | "
             "title=%r | "
-            "has_product_price=%s | "
-            "has_itemprop_price=%s",
+            "json_ld=%s | "
+            "scripts=%s",
             response.status_code,
             response.url,
             len(response.content),
             title,
-            soup.select_one(
-                '[data-test="product-price"]'
-            ) is not None,
-            soup.select_one(
-                '[itemprop="price"]'
-            ) is not None,
+            len(
+                soup.find_all(
+                    "script",
+                    type="application/ld+json",
+                )
+            ),
+            len(
+                soup.find_all(
+                    "script"
+                )
+            ),
         )
-
-        # ---------------------------------------------
-        # BOT / CHALLENGE DETECTION
-        # ---------------------------------------------
 
         if _is_bot_page(
             title,
             page_text,
         ):
-            logger.warning(
-                "Target bot/challenge page | "
-                "status=%s | title=%s | url=%s",
-                response.status_code,
-                title,
-                url,
-            )
-
             return ScrapeResult(
                 success=False,
                 retailer="Target",
@@ -229,85 +354,44 @@ def scrape_target(
                 status_code=response.status_code,
                 page_title=title,
                 error=(
-                    "Target temporarily blocked the "
-                    "price check. Please try again later."
+                    "Target temporarily blocked "
+                    "the price check."
                 ),
             )
 
-        # ---------------------------------------------
-        # PRICE
-        # ---------------------------------------------
-
         price = _find_price(
-            soup,
-            page_text,
+            soup
         )
-
-        # ---------------------------------------------
-        # STOCK
-        # ---------------------------------------------
 
         out_of_stock = _is_out_of_stock(
             page_text
         )
 
-        if (
-            price is not None
-            and not out_of_stock
-        ):
-            logger.info(
-                "Target scrape successful | "
-                "status=%s | price=%s | "
-                "title=%s",
-                response.status_code,
-                price,
-                title,
-            )
-
+        if price is not None:
             return ScrapeResult(
                 success=True,
                 retailer="Target",
                 price=price,
-                in_stock=True,
+                in_stock=not out_of_stock,
                 status_code=response.status_code,
                 page_title=title,
                 error=None,
             )
 
-        # ---------------------------------------------
-        # EXPLICITLY OUT OF STOCK
-        # ---------------------------------------------
-
         if out_of_stock:
-            logger.info(
-                "Target product out of stock | "
-                "status=%s | "
-                "price=%s | "
-                "title=%s",
-                response.status_code,
-                price,
-                title,
-            )
-
             return ScrapeResult(
                 success=True,
                 retailer="Target",
-                price=price,
+                price=None,
                 in_stock=False,
                 status_code=response.status_code,
                 page_title=title,
                 error=None,
             )
 
-        # ---------------------------------------------
-        # UNKNOWN
-        # ---------------------------------------------
-
         logger.warning(
             "Target price not found | "
-            "status=%s | "
-            "title=%s | "
-            "url=%s",
+            "status=%s | title=%s | url=%s",
             response.status_code,
             title,
             url,
