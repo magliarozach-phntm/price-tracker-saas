@@ -169,6 +169,24 @@ def scrape_amazon(
             url
         )
 
+        logger.warning(
+            "AMAZON RESPONSE DIAGNOSTIC | "
+            "status=%s | "
+            "final_url=%s | "
+            "content_length=%s | "
+            "title=%r | "
+            "has_product_title=%s | "
+            "has_price=%s | "
+            "has_add_to_cart=%s",
+            response.status_code,
+            response.url,
+            len(response.content),
+            get_page_title(soup),
+            soup.select_one("#productTitle") is not None,
+            soup.select_one(".a-price") is not None,
+            soup.select_one("#add-to-cart-button") is not None,
+        )
+
         title = get_page_title(
             soup
         )
@@ -240,7 +258,7 @@ def scrape_amazon(
         # -------------------------------------------------
 
         if _is_out_of_stock(
-                soup
+            soup
         ):
             logger.info(
                 "Amazon product explicitly out of stock | "
@@ -289,29 +307,6 @@ def scrape_amazon(
                 "Amazon returned the product page, "
                 "but the current price could not be determined."
             ),
-        )
-
-        # -------------------------------------------------
-        # SUCCESS
-        # -------------------------------------------------
-
-        logger.info(
-            "Amazon scrape successful | "
-            "status=%s | price=%s | "
-            "title=%s",
-            response.status_code,
-            price,
-            title,
-        )
-
-        return ScrapeResult(
-            success=True,
-            retailer="Amazon",
-            price=price,
-            in_stock=True,
-            status_code=response.status_code,
-            page_title=title,
-            error=None,
         )
 
     except Exception as exc:
