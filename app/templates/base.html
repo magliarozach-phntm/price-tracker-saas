@@ -248,15 +248,11 @@
 
         <div class="pt-4">
 
-            <div
-                class="
-                    app-flash
-                    app-flash--{{ flash.category }}
-                "
-                role="alert"
-            >
-                ...
-            </div>
+            {% for flash in flashes %}
+    <div class="alert alert-{{ flash.category }}">
+        {{ flash.message }}
+    </div>
+{% endfor %}
 
         </div>
 

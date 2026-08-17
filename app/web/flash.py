@@ -6,7 +6,7 @@ def add_flash(
     message: str,
     category: str = "info",
 ):
-    request.session["flash_message"] = {
+    request.session["flash"] = {
         "message": message,
         "category": category,
     }
@@ -16,6 +16,6 @@ def pop_flash(
     request: Request,
 ):
     return request.session.pop(
-        "flash_message",
+        "flash",
         None,
     )
