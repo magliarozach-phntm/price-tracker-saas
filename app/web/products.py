@@ -335,19 +335,32 @@ def check_product_now(
             )
 
 
+
     except ValueError as exc:
         logger.warning(
-            "Product check failed | "
-            "product_id=%s | name=%s | url=%s | reason=%s",
+            "PRODUCT CHECK VALUE ERROR | "
+            "product_id=%s | "
+            "name=%s | "
+            "exception_type=%s | "
+            "exception_repr=%r | "
+            "exception_str=%r",
             product.id,
             product.name,
-            product.url,
+            type(exc).__name__,
             exc,
+            str(exc),
         )
+        message = str(exc).strip()
+        if not message or message == "...":
+            message = (
+                "We couldn't determine the current Amazon price. "
+                "Please try again shortly."
+            )
         add_flash(
             request,
-            str(exc),
+            message,
             "danger",
+
         )
 
     except Exception:
