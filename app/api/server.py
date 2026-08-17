@@ -13,7 +13,7 @@ import logging
 from app.web.settings import router as settings_router
 from fastapi import Request
 from contextlib import asynccontextmanager
-
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app.services.scheduler.scheduler import (
     start_scheduler,
     stop_scheduler,
@@ -45,6 +45,11 @@ app = FastAPI(
     title="Price Tracker SaaS",
     version="3.0",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    ProxyHeadersMiddleware,
+    trusted_hosts="*",
 )
 
 @app.exception_handler(404)
