@@ -334,7 +334,16 @@ def check_product_now(
                 "success",
             )
 
+
     except ValueError as exc:
+        logger.warning(
+            "Product check failed | "
+            "product_id=%s | name=%s | url=%s | reason=%s",
+            product.id,
+            product.name,
+            product.url,
+            exc,
+        )
         add_flash(
             request,
             str(exc),
