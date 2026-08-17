@@ -1,13 +1,14 @@
-import json
 import logging
 import re
 from decimal import Decimal, InvalidOperation
 
+from playwright.sync_api import (
+    sync_playwright,
+    TimeoutError as PlaywrightTimeoutError,
+)
+
 from app.services.scrapers.base import (
     ScrapeResult,
-    fetch_page,
-    get_page_title,
-    clean_price,
 )
 
 
@@ -16,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 PRICE_SELECTORS = [
     '[data-test="product-price"]',
+    '[data-test="product-price"] span',
     '[data-test="current-price"]',
+    '[data-test="current-price"] span',
     '[data-test="offerPrice"]',
     '[itemprop="price"]',
 ]
@@ -29,65 +32,23 @@ OUT_OF_STOCK_PHRASES = [
 ]
 
 
-BOT_PAGE_PHRASES = [
-    "access denied",
-    "verify you are human",
-    "verify your identity",
-    "captcha",
-    "unusual traffic",
-]
-
-
-def _is_bot_page(
-    title: str,
-    page_text: str,
-) -> bool:
-    combined = f"{title} {page_text}".lower()
-
-    return any(
-        phrase in combined
-        for phrase in BOT_PAGE_PHRASES
-    )
-
-
-def _is_out_of_stock(
-    page_text: str,
-    title: str,
-) -> bool:
-
-    product_name = title.split(
-        " : Target"
-    )[0].strip()
-
-    start_index = page_text.find(
-        product_name
-    )
-
-    if start_index == -1:
-        return False
-
-    product_section = page_text[
-        start_index:start_index + 2000
-    ].lower()
-
-    return any(
-        phrase in product_section
-        for phrase in OUT_OF_STOCK_PHRASES
-    )
-
-
-def _extract_decimal(
-    value,
+def _parse_price(
+    text: str,
 ) -> Decimal | None:
-    if value is None:
+    if not text:
+        return None
+
+    match = re.search(
+        r"\$([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+        text,
+    )
+
+    if not match:
         return None
 
     try:
         return Decimal(
-            str(value)
-            .replace("$", "")
-            .replace(",", "")
-            .strip()
+            match.group(1).replace(",", "")
         )
 
     except (
@@ -97,395 +58,251 @@ def _extract_decimal(
         return None
 
 
-def _find_price_from_json_ld(
-    soup,
-) -> Decimal | None:
-    scripts = soup.find_all(
-        "script",
-        type="application/ld+json",
-    )
-
-    for script in scripts:
-
-        if not script.string:
-            continue
-
-        try:
-            data = json.loads(
-                script.string
-            )
-
-        except json.JSONDecodeError:
-            continue
-
-        objects = (
-            data
-            if isinstance(data, list)
-            else [data]
-        )
-
-        for obj in objects:
-
-            if not isinstance(
-                obj,
-                dict,
-            ):
-                continue
-
-            offers = obj.get(
-                "offers"
-            )
-
-            if isinstance(
-                offers,
-                dict,
-            ):
-                price = (
-                    offers.get("price")
-                    or offers.get(
-                        "lowPrice"
-                    )
-                )
-
-                parsed = _extract_decimal(
-                    price
-                )
-
-                if parsed is not None:
-                    logger.info(
-                        "Target price found in JSON-LD | "
-                        "price=%s",
-                        parsed,
-                    )
-
-                    return parsed
-
-            elif isinstance(
-                offers,
-                list,
-            ):
-                for offer in offers:
-
-                    if not isinstance(
-                        offer,
-                        dict,
-                    ):
-                        continue
-
-                    price = (
-                        offer.get("price")
-                        or offer.get(
-                            "lowPrice"
-                        )
-                    )
-
-                    parsed = (
-                        _extract_decimal(
-                            price
-                        )
-                    )
-
-                    if parsed is not None:
-                        logger.info(
-                            "Target price found in JSON-LD offer | "
-                            "price=%s",
-                            parsed,
-                        )
-
-                        return parsed
-
-    return None
-
-
-def _find_price_from_scripts(
-    soup,
-) -> Decimal | None:
-
-    patterns = [
-        r'"current_retail"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
-        r'"currentRetail"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
-        r'"offer_price"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
-        r'"price"\s*:\s*([0-9]+(?:\.[0-9]+)?)',
-    ]
-
-    for script in soup.find_all(
-        "script"
-    ):
-
-        script_text = (
-            script.string
-            or script.get_text()
-        )
-
-        if not script_text:
-            continue
-
-        for pattern in patterns:
-
-            match = re.search(
-                pattern,
-                script_text,
-            )
-
-            if match:
-                parsed = (
-                    _extract_decimal(
-                        match.group(1)
-                    )
-                )
-
-                if parsed is not None:
-                    logger.info(
-                        "Target price found in script data | "
-                        "pattern=%s | price=%s",
-                        pattern,
-                        parsed,
-                    )
-
-                    return parsed
-
-    return None
-
-
-def _find_price_from_selectors(
-    soup,
+def _find_rendered_price(
+    page,
 ) -> Decimal | None:
 
     for selector in PRICE_SELECTORS:
 
-        element = soup.select_one(
+        locator = page.locator(
             selector
-        )
+        ).first
 
-        if element is None:
+        try:
+            if locator.count() == 0:
+                continue
+
+            text = locator.inner_text(
+                timeout=2000
+            )
+
+        except Exception:
             continue
 
-        content = (
-            element.get("content")
-            or element.get("value")
+        price = _parse_price(
+            text
         )
 
-        if content:
-            parsed = _extract_decimal(
-                content
+        if price is not None:
+            logger.info(
+                "Target rendered price found | "
+                "selector=%s | price=%s",
+                selector,
+                price,
             )
 
-            if parsed is not None:
-                return parsed
+            return price
 
-        text = element.get_text(
-            " ",
-            strip=True,
+    # Fallback to rendered page text,
+    # not the original requests HTML.
+    body_text = page.locator(
+        "body"
+    ).inner_text(
+        timeout=5000
+    )
+
+    price_matches = re.findall(
+        r"\$([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2}))",
+        body_text,
+    )
+
+    logger.warning(
+        "TARGET RENDERED PRICE VALUES | values=%s",
+        price_matches[:20],
+    )
+
+    if not price_matches:
+        return None
+
+    # Temporary fallback.
+    # Once we see Target's actual rendered DOM
+    # on Railway, we can tighten this further.
+    for value in price_matches:
+
+        price = _parse_price(
+            f"${value}"
         )
 
-        match = re.search(
-            r"\$([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
-            text,
-        )
-
-        if match:
-            return _extract_decimal(
-                match.group(1)
-            )
+        if price is not None:
+            return price
 
     return None
 
 
-def _find_price(
-    soup,
-    page_text: str,
-    title: str,
-) -> Decimal | None:
+def _get_stock_status(
+    page,
+) -> bool | None:
 
-    price = _find_price_from_json_ld(
-        soup
-    )
+    try:
+        body_text = page.locator(
+            "body"
+        ).inner_text(
+            timeout=5000
+        ).lower()
 
-    if price is not None:
-        return price
+    except Exception:
+        return None
 
-    price = _find_price_from_scripts(
-        soup
-    )
+    for phrase in OUT_OF_STOCK_PHRASES:
 
-    if price is not None:
-        return price
+        if phrase in body_text:
+            return False
 
-    price = _find_price_from_selectors(
-        soup
-    )
+    if (
+        "add to cart" in body_text
+        or "pick it up" in body_text
+        or "ship it" in body_text
+    ):
+        return True
 
-    if price is not None:
-        return price
-
-    return _find_price_from_page_text(
-        page_text,
-        title,
-    )
+    return None
 
 
 def scrape_target(
     url: str,
 ) -> ScrapeResult:
 
+    browser = None
+
     try:
-        response, soup = fetch_page(
-            url
-        )
 
-        raw_html = response.text
+        with sync_playwright() as playwright:
 
-        money_matches = re.findall(
-            r'\$[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?',
-            raw_html,
-        )
-
-        unique_money = list(
-            dict.fromkeys(
-                money_matches
-            )
-        )
-
-        logger.warning(
-            "TARGET RAW PRICE DIAGNOSTIC | "
-            "money_values=%s",
-            unique_money[:30],
-        )
-
-        selected_tcin = None
-
-        match = re.search(
-            r"[?&]preselect=(\d+)",
-            url,
-        )
-
-        if match:
-            selected_tcin = (
-                match.group(1)
+            browser = playwright.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                ],
             )
 
-        logger.warning(
-            "TARGET TCIN DIAGNOSTIC | "
-            "selected_tcin=%s | "
-            "tcin_present_in_html=%s",
-            selected_tcin,
-            (
-                selected_tcin in raw_html
-                if selected_tcin
-                else False
-            ),
-        )
-
-        if (
-            selected_tcin
-            and selected_tcin in raw_html
-        ):
-            tcin_index = raw_html.find(
-                selected_tcin
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 "
+                    "(Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) "
+                    "Chrome/150.0.0.0 Safari/537.36"
+                ),
+                locale="en-US",
+                viewport={
+                    "width": 1440,
+                    "height": 1000,
+                },
             )
 
-            snippet = raw_html[
-                max(
-                    0,
-                    tcin_index - 500,
-                ):
-                tcin_index + 1500
-            ]
+            page = context.new_page()
+
+            response = page.goto(
+                url,
+                wait_until="domcontentloaded",
+                timeout=30000,
+            )
+
+            # Give Target's client-side product
+            # data time to populate.
+            try:
+                page.wait_for_load_state(
+                    "networkidle",
+                    timeout=10000,
+                )
+            except PlaywrightTimeoutError:
+                logger.info(
+                    "Target networkidle timed out; "
+                    "continuing with rendered page."
+                )
+
+            title = page.title()
 
             logger.warning(
-                "TARGET TCIN SNIPPET | %s",
-                snippet,
+                "TARGET PLAYWRIGHT DIAGNOSTIC | "
+                "status=%s | "
+                "title=%r | "
+                "final_url=%s",
+                (
+                    response.status
+                    if response
+                    else None
+                ),
+                title,
+                page.url,
             )
 
-        title = get_page_title(
-            soup
-        )
+            price = _find_rendered_price(
+                page
+            )
 
-        page_text = soup.get_text(
-            " ",
-            strip=True,
-        )
+            in_stock = _get_stock_status(
+                page
+            )
 
-        logger.warning(
-            "TARGET RESPONSE DIAGNOSTIC | "
-            "status=%s | "
-            "final_url=%s | "
-            "content_length=%s | "
-            "title=%r | "
-            "json_ld=%s | "
-            "scripts=%s",
-            response.status_code,
-            response.url,
-            len(response.content),
-            title,
-            len(
-                soup.find_all(
-                    "script",
-                    type="application/ld+json",
+            if price is not None:
+
+                logger.info(
+                    "Target Playwright scrape successful | "
+                    "price=%s | in_stock=%s | "
+                    "title=%s",
+                    price,
+                    in_stock,
+                    title,
                 )
-            ),
-            len(
-                soup.find_all(
-                    "script"
-                )
-            ),
-        )
 
-        if _is_bot_page(
-            title,
-            page_text,
-        ):
+                return ScrapeResult(
+                    success=True,
+                    retailer="Target",
+                    price=price,
+                    in_stock=(
+                        True
+                        if in_stock is None
+                        else in_stock
+                    ),
+                    status_code=(
+                        response.status
+                        if response
+                        else None
+                    ),
+                    page_title=title,
+                    error=None,
+                )
+
+            if in_stock is False:
+
+                return ScrapeResult(
+                    success=True,
+                    retailer="Target",
+                    price=None,
+                    in_stock=False,
+                    status_code=(
+                        response.status
+                        if response
+                        else None
+                    ),
+                    page_title=title,
+                    error=None,
+                )
+
             return ScrapeResult(
                 success=False,
                 retailer="Target",
                 price=None,
                 in_stock=None,
-                status_code=response.status_code,
+                status_code=(
+                    response.status
+                    if response
+                    else None
+                ),
                 page_title=title,
                 error=(
-                    "Target temporarily blocked "
-                    "the price check."
+                    "Target loaded the product page, "
+                    "but the current price could not "
+                    "be determined."
                 ),
             )
 
-        price = _find_price(
-            soup,
-            page_text,
-            title,
-        )
+    except PlaywrightTimeoutError:
 
-        out_of_stock = _is_out_of_stock(
-            page_text,
-            title,
-        )
-
-        if price is not None:
-            return ScrapeResult(
-                success=True,
-                retailer="Target",
-                price=price,
-                in_stock=not out_of_stock,
-                status_code=response.status_code,
-                page_title=title,
-                error=None,
-            )
-
-        if out_of_stock:
-            return ScrapeResult(
-                success=True,
-                retailer="Target",
-                price=None,
-                in_stock=False,
-                status_code=response.status_code,
-                page_title=title,
-                error=None,
-            )
-
-        logger.warning(
-            "Target price not found | "
-            "status=%s | title=%s | url=%s",
-            response.status_code,
-            title,
+        logger.exception(
+            "Target browser timed out | url=%s",
             url,
         )
 
@@ -494,18 +311,16 @@ def scrape_target(
             retailer="Target",
             price=None,
             in_stock=None,
-            status_code=response.status_code,
-            page_title=title,
             error=(
-                "Target returned the product page, "
-                "but the current price could not "
-                "be determined."
+                "Target took too long to load. "
+                "Please try again shortly."
             ),
         )
 
     except Exception as exc:
+
         logger.exception(
-            "Target scraper exception | "
+            "Target browser scrape failed | "
             "url=%s",
             url,
         )
@@ -521,46 +336,11 @@ def scrape_target(
             ),
         )
 
-def _find_price_from_page_text(
-    page_text: str,
-    title: str,
-) -> Decimal | None:
+    finally:
 
-    # Target's HTML contains the selected product's
-    # visible price near the product title.
-    product_name = title.split(" : Target")[0].strip()
+        if browser is not None:
 
-    start_index = page_text.find(
-        product_name
-    )
-
-    if start_index == -1:
-        return None
-
-    # Only inspect the area immediately following
-    # the product title so prices from recommended
-    # products aren't accidentally selected.
-    product_section = page_text[
-        start_index:start_index + 1500
-    ]
-
-    match = re.search(
-        r"\$([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2}))",
-        product_section,
-    )
-
-    if not match:
-        return None
-
-    price = _extract_decimal(
-        match.group(1)
-    )
-
-    if price is not None:
-        logger.info(
-            "Target price found in product text | "
-            "price=%s",
-            price,
-        )
-
-    return price
+            try:
+                browser.close()
+            except Exception:
+                pass
