@@ -1,207 +1,209 @@
-# MAG PriceWatch
+# 📈 MAG PriceWatch
 
-A production-deployed price tracking SaaS application built with **FastAPI, PostgreSQL, SQLAlchemy, Alembic, APScheduler, Jinja2, and BeautifulSoup**.
+MAG PriceWatch is a full-stack price monitoring SaaS application built with Python and FastAPI.
 
-MAG PriceWatch allows users to create accounts, track products, set target prices, monitor price and stock changes, view product analytics, and receive automated email alerts when tracked products meet configured conditions.
+The application allows users to create accounts, track products, define target prices, perform live price checks, monitor price history, and receive automated alerts when tracked products reach desired prices.
 
-> Originally inspired by a Python price-tracking project and rebuilt into a full-stack, multi-user SaaS application.
-
----
-
-## Live Application
-
-MAG PriceWatch is deployed on Railway.
-
-**Live Demo:**  
-`ADD_YOUR_RAILWAY_URL_HERE`
+The application is deployed in production on Railway with PostgreSQL persistence and uses Playwright-powered browser automation for JavaScript-rendered retailer pages.
 
 ---
 
-## Features
+## 🚀 Features
 
-### User Accounts
+### 👤 User Accounts
 
-MAG PriceWatch supports individual user accounts with:
-
-- User registration
+- User registration and authentication
 - Secure password hashing
 - Session-based authentication
-- Login and logout
-- Change-password functionality
-- User-specific product ownership
+- User-specific product tracking
 - Configurable user timezone
-- Secure HTTPS-only production cookies
+- Protected dashboard and product routes
 
-Tracked products are associated with their owner so authenticated users only interact with their own products.
+### 📦 Product Tracking
 
----
+Users can:
 
-### Product Tracking
-
-Authenticated users can:
-
-- Add products to their watchlist
-- Set a target price
+- Add products by URL
+- Set custom target prices
 - Edit tracked products
 - Delete tracked products
-- Manually trigger a price check
+- Perform an immediate **Check Now**
 - Monitor current price
-- Monitor stock availability
-- View the last check time
-- View individual product analytics
+- View stock availability
+- See the difference between current and target price
+- Track historical price checks
+
+### 🎯 Retailer Support
+
+| Retailer | URL Support | Live Price Tracking |
+|---|---:|---:|
+| Target | ✅ | ✅ |
+| Amazon | ✅ | 🚧 Coming Soon |
+
+Target product pages are rendered using a headless Chromium browser through Playwright, allowing MAG PriceWatch to retrieve pricing information from JavaScript-rendered product pages.
+
+Amazon URLs can be added to the application, but active Amazon price monitoring is currently disabled while a reliable production integration is developed.
 
 ---
 
-### Automated Price Monitoring
+## 🔍 Live Target Price Monitoring
 
-MAG PriceWatch includes background price checking powered by **APScheduler**.
+MAG PriceWatch uses Playwright and headless Chromium to load Target product pages in a real browser environment.
 
-The tracking pipeline is designed to:
+The tracking pipeline is:
 
-1. Retrieve tracked products from PostgreSQL
-2. Send products through the appropriate retailer scraper
-3. Determine current price and availability
-4. Update product state
-5. Store successful price observations
-6. Evaluate price-alert conditions
-7. Evaluate back-in-stock conditions
-8. Send email notifications when appropriate
+```text
+Target Product URL
+        ↓
+Retailer Dispatcher
+        ↓
+Target Scraper
+        ↓
+Playwright / Chromium
+        ↓
+Rendered Product Page
+        ↓
+Price + Availability Extraction
+        ↓
+Tracking Service
+        ↓
+PostgreSQL
+        ↓
+MAG PriceWatch Dashboard
+```
 
-Individual product failures are isolated so one failed retailer request does not stop checks for other tracked products.
+This approach allows the application to work with product information that is populated dynamically through JavaScript rather than being available in the initial HTML response.
 
 ---
+
+## ⏱️ Automated Monitoring
+
+MAG PriceWatch includes background scheduling through APScheduler.
+
+The scheduler integrates with the same tracking service used by manual **Check Now** requests, allowing tracked products to be checked automatically.
+
+The architecture is designed so manual and scheduled checks share the same tracking pipeline.
+
+```text
+APScheduler
+     ↓
+Tracked Products
+     ↓
+Retailer Scraper
+     ↓
+Price / Stock Result
+     ↓
+Price History
+     ↓
+Alert Evaluation
+```
+
+---
+
+## 🔔 Price & Stock Alerts
+
+The tracking service supports automated email notifications.
 
 ### Price Alerts
 
-Users can assign a target price to each tracked product.
-
-When a successful check returns a price at or below the target price, MAG PriceWatch can send an email notification.
-
-The application also stores alert information to help prevent unnecessary duplicate price notifications.
-
----
-
-### Stock Monitoring
-
-Tracked products maintain an availability state.
-
-MAG PriceWatch can distinguish between:
-
-- In stock
-- Out of stock
-- Availability unknown
-
-When a product transitions from out of stock back to in stock, the tracking service can send a back-in-stock notification.
-
----
-
-### Price History
-
-Successful price observations are stored separately from the current product state.
-
-This allows the application to retain historical pricing information rather than simply replacing the previous price each time a check runs.
-
-Product analytics can use this history to calculate and display information such as:
-
-- Current price
-- Target price
-- Historical prices
-- Lowest recorded price
-- Highest recorded price
-- Average recorded price
-- Stock status
-- Last checked time
-
----
-
-## Retailer Architecture
-
-The scraping layer uses a modular retailer architecture.
+When:
 
 ```text
-app/services/scrapers/
-├── amazon.py
-├── base.py
-├── bestbuy.py
-├── ebay.py
-├── target.py
-└── walmart.py
+Current Price <= Target Price
 ```
 
-Retailer-specific scraping logic is separated from the main tracking service.
+MAG PriceWatch can notify the user that their target price has been reached.
 
-The application dispatches a product URL to the appropriate scraper, which returns a standardized result containing information such as:
+The application also tracks the last alerted price to prevent unnecessary duplicate alerts.
+
+### Back-in-Stock Alerts
+
+The application compares the previous stock state with the latest result.
+
+When a product transitions from:
 
 ```text
-success
-retailer
-price
-in_stock
-status_code
-page_title
-error
+Out of Stock → In Stock
 ```
 
-This keeps the tracking system independent from individual retailer implementations and makes additional retailer support easier to develop.
-
-### Current Retailer Support
-
-**Amazon is currently the primary supported retailer.**
-
-Additional retailer modules are included in the project architecture and are under development.
-
-Retailer websites can change their HTML structure or restrict automated requests, so production scraping reliability remains an active area of development.
+a stock notification can be sent to the user.
 
 ---
 
-## Tech Stack
+## 📊 Price History
+
+Successful product checks are persisted to the database.
+
+Each price history record stores:
+
+- Product
+- Price
+- Check timestamp
+
+This provides the foundation for historical price analytics and future price trend visualization.
+
+---
+
+## 🛠️ Tech Stack
 
 ### Backend
 
 - Python
 - FastAPI
-- SQLAlchemy 2
-- PostgreSQL
+- SQLAlchemy
 - Pydantic
-- Alembic
+- Starlette
+- Uvicorn
 
-### Frontend
+### Database
+
+- PostgreSQL — Production
+- SQLite — Automated testing
+
+### Web
 
 - Jinja2
-- HTML5
-- CSS3
-- JavaScript
+- HTML
+- CSS
+- FastAPI server-side rendering
 
-### Automation
+### Browser Automation
+
+- Playwright
+- Headless Chromium
+- BeautifulSoup
+
+### Background Processing
 
 - APScheduler
 
-### Web Scraping
+### Database Migrations
 
-- Requests
-- BeautifulSoup4
+- Alembic
 
-### Email
+### Authentication & Validation
 
-- SMTP
-- Gmail
-
-### Testing
-
-- Pytest
-- FastAPI TestClient
-- SQLite in-memory test database
+- SessionMiddleware
+- Secure password hashing
+- Pydantic validation
+- Email validation
 
 ### Deployment
 
 - Railway
-- Uvicorn
+- Railpack
 - PostgreSQL
-- Alembic migrations
+- GitHub
+
+### Testing
+
+- pytest
+- FastAPI TestClient
+- SQLAlchemy in-memory SQLite test database
 
 ---
 
-## Project Architecture
+## 🏗️ Project Architecture
 
 ```text
 price-tracker-saas/
@@ -210,7 +212,6 @@ price-tracker-saas/
 │   └── versions/
 │
 ├── app/
-│   │
 │   ├── api/
 │   │   ├── api_auth.py
 │   │   ├── api_products.py
@@ -218,65 +219,28 @@ price-tracker-saas/
 │   │   └── server.py
 │   │
 │   ├── core/
-│   │   ├── config.py
 │   │   ├── database.py
 │   │   ├── emailer.py
 │   │   └── security.py
 │   │
 │   ├── models/
-│   │   ├── price_history.py
-│   │   ├── product.py
-│   │   └── user.py
 │   │
 │   ├── schemas/
-│   │   ├── price_history.py
-│   │   ├── product.py
-│   │   └── user.py
 │   │
 │   ├── services/
 │   │   ├── scheduler/
-│   │   │   └── scheduler.py
-│   │   │
 │   │   ├── scrapers/
 │   │   │   ├── amazon.py
 │   │   │   ├── base.py
-│   │   │   ├── bestbuy.py
-│   │   │   ├── ebay.py
-│   │   │   ├── target.py
-│   │   │   └── walmart.py
-│   │   │
+│   │   │   └── target.py
 │   │   ├── tracking/
-│   │   │   ├── models.py
-│   │   │   └── tracker.py
-│   │   │
-│   │   ├── dashboard.py
-│   │   ├── product_stats.py
 │   │   ├── product_validation.py
 │   │   └── scraper.py
 │   │
 │   ├── static/
-│   │   ├── css/
-│   │   │   ├── components.css
-│   │   │   ├── layout.css
-│   │   │   ├── pages.css
-│   │   │   └── variables.css
-│   │   │
-│   │   └── js/
-│   │       └── dashboard.js
+│   │   └── css/
 │   │
 │   ├── templates/
-│   │   ├── email/
-│   │   ├── errors/
-│   │   ├── add_product.html
-│   │   ├── base.html
-│   │   ├── dashboard.html
-│   │   ├── edit_product.html
-│   │   ├── index.html
-│   │   ├── login.html
-│   │   ├── product_detail.html
-│   │   ├── products.html
-│   │   ├── register.html
-│   │   └── settings.html
 │   │
 │   └── web/
 │       ├── auth.py
@@ -287,258 +251,139 @@ price-tracker-saas/
 │       ├── products.py
 │       └── settings.py
 │
-├── scripts/
-│   └── seed.py
-│
 ├── tests/
-│   ├── conftest.py
-│   ├── test_auth.py
-│   ├── test_product_validation.py
-│   ├── test_products.py
-│   └── test_tracker.py
 │
 ├── alembic.ini
 ├── requirements.txt
-├── requirements-dev.txt
-├── run.py
 └── README.md
 ```
 
+The application separates API routes, web routes, persistence, scraping, tracking, scheduling, validation, and presentation into dedicated modules.
+
 ---
 
-## Application Flow
+## 🗄️ Database Architecture
 
-A manual or scheduled product check follows approximately this path:
+MAG PriceWatch uses SQLAlchemy for ORM-based database access.
 
-```text
-Tracked Product
-      │
-      ▼
-Tracking Service
-      │
-      ▼
-Scraper Dispatcher
-      │
-      ▼
-Retailer Scraper
-      │
-      ├── Price
-      ├── Availability
-      └── Scrape Status
-      │
-      ▼
-Tracking Result
-      │
-      ├── Update Product
-      ├── Store Price History
-      ├── Evaluate Target Price
-      └── Evaluate Stock Transition
-      │
-      ▼
-PostgreSQL
-      │
-      ▼
-Email Alert
-(if conditions are met)
+Production uses PostgreSQL through a configurable environment variable:
+
+```env
+DATABASE_URL=postgresql+psycopg://...
 ```
 
-The scraper layer and tracking layer are intentionally separated.
+Database sessions are provided through FastAPI dependency injection.
 
-A retailer scraper is responsible for determining what the retailer page contains.
-
-The tracking service is responsible for deciding what the application should do with that information.
-
----
-
-## Database
-
-MAG PriceWatch uses **PostgreSQL** in production and **SQLAlchemy 2** as its ORM.
-
-The primary application models include:
-
-### User
-
-Stores account information such as:
-
-- Name
-- Email
-- Password hash
-- Timezone
-
-### TrackedProduct
-
-Stores information including:
-
-- Product owner
-- Product name
-- Product URL
-- Target price
-- Current price
-- Stock state
-- Last checked time
-- Price alert state
-- Stock alert state
-
-### PriceHistory
-
-Stores individual successful price observations associated with tracked products.
-
----
-
-## Database Migrations
-
-Database schema changes are managed with **Alembic**.
-
-The current migration history includes:
-
-```text
-Initial schema
-      ↓
-Alert tracking fields
-      ↓
-Stock tracking fields
-      ↓
-User timezone
-```
-
-Apply all migrations:
+Alembic manages schema migrations:
 
 ```bash
 alembic upgrade head
 ```
 
-Check the currently applied revision:
+Railway runs migrations against the production PostgreSQL database as part of the deployment process.
 
-```bash
-alembic current
+---
+
+## 🧪 Testing
+
+The project includes an automated pytest suite covering major application functionality.
+
+Current test status:
+
+```text
+30 passed
 ```
 
-View migration history:
+Tests use an isolated in-memory SQLite database:
+
+```text
+sqlite+pysqlite:///:memory:
+```
+
+with SQLAlchemy's `StaticPool`.
+
+This keeps automated tests isolated from the production PostgreSQL database.
+
+Run the complete suite with:
 
 ```bash
-alembic history
+pytest -v
 ```
 
 ---
 
-## API
+## 💻 Local Development
 
-MAG PriceWatch includes versioned FastAPI routes under:
-
-```text
-/api/v1
-```
-
-The API architecture currently contains routers for:
-
-- Authentication
-- Products
-- Product tracking
-
-FastAPI also provides automatically generated interactive API documentation.
-
-When the application is running, Swagger UI is available at:
-
-```text
-/docs
-```
-
-and the OpenAPI schema is available at:
-
-```text
-/openapi.json
-```
-
----
-
-## Running Locally
-
-### 1. Clone the Repository
+### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/magliarozach-phntm/price-tracker-saas.git
 cd price-tracker-saas
 ```
 
----
+### 2. Create a virtual environment
 
-### 2. Create a Virtual Environment
-
-#### Windows PowerShell
+Windows:
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+.venv\Scripts\activate
 ```
 
-#### macOS / Linux
+macOS/Linux:
 
 ```bash
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 ```
 
----
-
-### 3. Install Dependencies
-
-Install production dependencies:
+### 3. Install Python dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-For development and testing:
+### 4. Install Chromium for Playwright
 
 ```bash
-pip install -r requirements-dev.txt
+playwright install chromium
 ```
 
----
+On supported Linux environments where browser dependencies are also required:
 
-### 4. Configure Environment Variables
+```bash
+playwright install --with-deps chromium
+```
 
-Create a `.env` file in the project root.
+### 5. Configure environment variables
+
+Create a `.env` file.
 
 Example:
 
 ```env
 DATABASE_URL=your_database_url
 SECRET_KEY=your_secret_key
-
-GMAIL_USER=your_email
-GMAIL_PASSWORD=your_app_password
-
 HTTPS_ONLY=False
 ```
 
-Production credentials should never be committed to source control.
+Additional email configuration may be required for notification functionality.
 
-The `.env` file is excluded through `.gitignore`.
+> Never commit `.env` files, database credentials, API keys, or application secrets to GitHub.
 
----
-
-### 5. Configure the Database
-
-Run:
+### 6. Apply database migrations
 
 ```bash
 alembic upgrade head
 ```
 
-This brings the configured database to the latest schema revision.
-
----
-
-### 6. Start the Application
-
-For local development:
+### 7. Start the application
 
 ```bash
 uvicorn app.api.server:app --reload
 ```
 
-The application will normally be available at:
+Then open:
 
 ```text
 http://127.0.0.1:8000
@@ -546,266 +391,132 @@ http://127.0.0.1:8000
 
 ---
 
-## Testing
+## ☁️ Production Deployment
 
-MAG PriceWatch includes an automated Pytest suite covering major application behavior.
+MAG PriceWatch is deployed on Railway.
 
-Current test areas include:
-
-- Authentication
-- Product validation
-- Product operations
-- Product tracking
-
-Run the complete suite:
-
-```bash
-pytest -v
-```
-
-Current test status:
+Production consists of:
 
 ```text
-26 passed
+GitHub
+   ↓
+Railway / Railpack
+   ↓
+Python Environment
+   ↓
+Playwright + Chromium
+   ↓
+Alembic Migrations
+   ↓
+FastAPI / Uvicorn
+   ↓
+PostgreSQL
 ```
 
-Tests use an isolated in-memory SQLite database through SQLAlchemy's `StaticPool`, preventing the automated test suite from modifying the production PostgreSQL database.
-
----
-
-## Production Deployment
-
-MAG PriceWatch is deployed on **Railway**.
-
-The production architecture is approximately:
-
-```text
-                    Internet
-                       │
-                     HTTPS
-                       │
-                       ▼
-                 Railway Proxy
-                       │
-                       ▼
-                Uvicorn / FastAPI
-                       │
-            ┌──────────┴──────────┐
-            │                     │
-            ▼                     ▼
-      Web Application        APScheduler
-            │                     │
-            └──────────┬──────────┘
-                       │
-                       ▼
-                   SQLAlchemy
-                       │
-                       ▼
-             Railway PostgreSQL
-```
-
-The application listens on Railway's dynamically assigned port:
+The production server runs with:
 
 ```bash
 uvicorn app.api.server:app --host 0.0.0.0 --port $PORT
 ```
 
-Production database migrations are handled through Alembic.
+Playwright requires a Chromium browser binary in addition to the Python package.
 
-Production secrets and database credentials are supplied through environment variables rather than being committed to the repository.
+The Railway build therefore installs Chromium and its required Linux dependencies:
+
+```bash
+playwright install --with-deps chromium
+```
 
 ---
 
-## Security
+## 🔐 Security
 
-MAG PriceWatch includes several application security practices:
+The application includes:
 
 - Password hashing
 - Session-based authentication
-- User-scoped product access
+- Protected user routes
+- Per-user product ownership validation
 - Environment-based secrets
-- HTTPS-only session cookies in production
-- SameSite cookie protection
-- Protected product operations
-- SQLAlchemy parameterized database operations
-- Transaction rollback on database failures
-- Custom production error handling
-- Sensitive credentials excluded from Git
+- Server-side validation
+- Database-backed user accounts
+- HTTPS-aware session configuration
 
-The following values should never be committed:
-
-```text
-DATABASE_URL
-SECRET_KEY
-GMAIL_PASSWORD
-.env
-```
+Sensitive credentials are supplied through environment variables rather than stored in source control.
 
 ---
 
-## Error Handling
+## 🗺️ Roadmap
 
-The application includes custom handling for common web errors, including:
+Planned development includes:
 
-```text
-404 Not Found
-500 Internal Server Error
-```
-
-The scraper architecture also distinguishes between several different product states.
-
-For example, an unavailable product is not necessarily considered a failed scrape:
-
-```text
-Successful scrape
-Price: None
-Availability: Out of Stock
-```
-
-This is different from:
-
-```text
-Failed scrape
-Price: Unknown
-Availability: Unknown
-```
-
-This distinction allows the tracking service to make better decisions about price history and stock alerts.
-
----
-
-## Background Scheduling
-
-The application's scheduler is integrated into the FastAPI application lifecycle.
-
-When the application starts:
-
-```text
-FastAPI Startup
-      │
-      ▼
-Start APScheduler
-```
-
-When the application shuts down:
-
-```text
-FastAPI Shutdown
-      │
-      ▼
-Stop APScheduler
-```
-
-Scheduled product checks use the same core tracking service as manual checks, reducing duplicated business logic between automated and user-triggered operations.
+- [x] FastAPI backend
+- [x] User registration
+- [x] User login/logout
+- [x] Session authentication
+- [x] Product CRUD
+- [x] Target price configuration
+- [x] Manual price checks
+- [x] Target URL support
+- [x] Live Target price extraction
+- [x] Playwright browser automation
+- [x] PostgreSQL production database
+- [x] Alembic migrations
+- [x] Railway deployment
+- [x] Price history
+- [x] Stock-state tracking
+- [x] APScheduler integration
+- [x] Automated test suite
+- [ ] Production verification of scheduled price checks
+- [ ] Amazon price tracking
+- [ ] Additional retailer integrations
+- [ ] Historical price charts
+- [ ] Improved analytics
+- [ ] Notification preferences
+- [ ] Expanded API functionality
+- [ ] Docker deployment
+- [ ] CI/CD test automation
 
 ---
 
-## Development Status
+## 🎯 Project Purpose
 
-MAG PriceWatch is actively being developed.
+MAG PriceWatch began as a Python price-tracking project and has evolved into a deployed full-stack application.
 
-### Implemented
+The project is intended to demonstrate practical experience with:
 
-- FastAPI backend
-- PostgreSQL persistence
-- SQLAlchemy ORM
-- Alembic migrations
-- User registration
-- User authentication
-- Session management
-- Password changes
-- User-specific products
-- Product creation
-- Product editing
-- Product deletion
-- Manual product checks
-- Price history
-- Product analytics
-- Stock state tracking
-- Price alert logic
-- Back-in-stock alert logic
-- Email notifications
-- Background scheduler
-- Automated test suite
-- Production deployment
-- HTTPS production configuration
-- Custom error pages
-
-### In Progress
-
-- Production Amazon scraping reliability
-- Expanded retailer support
-- Scraper diagnostics
-- Additional automated test coverage
-- Production monitoring and observability
-
----
-
-## Lessons & Engineering Goals
-
-This project began as a relatively small Python price-alert exercise and evolved into a larger software engineering project.
-
-The goal became building the infrastructure around the scraper rather than simply extracting a price from a webpage.
-
-Development has included hands-on work with:
-
-- FastAPI application architecture
-- REST API design
-- Server-side rendered web applications
-- Authentication
-- Authorization
-- Relational database design
-- SQLAlchemy ORM
-- PostgreSQL
+- Backend software engineering
+- REST API development
+- Relational databases
+- ORM architecture
 - Database migrations
-- Background jobs
+- Browser automation
 - Web scraping
-- Email automation
-- Application state
-- Price-history modeling
-- Error handling
+- Authentication
+- Background scheduling
 - Automated testing
-- Environment configuration
-- Git workflows
 - Cloud deployment
 - Production debugging
+- Modular application architecture
 
-One of the major engineering lessons from the project has been the difference between code that works locally and software that operates reliably in a production environment.
-
----
-
-## Roadmap
-
-Future improvements may include:
-
-- Expanded retailer support
-- More resilient production scraping
-- Additional price-history visualizations
-- Improved product analytics
-- Better retry and failure handling
-- Additional API coverage
-- Increased automated test coverage
-- Production health monitoring
-- Scheduler observability
-- User notification preferences
-- Additional alert types
+It also demonstrates the transition from a locally running Python application to a persistent, database-backed production web service.
 
 ---
 
-## Author
+## 👨‍💻 Author
 
 **Zach Magliaro**
 
-Python / Backend Software Developer
+Software Engineering • Backend Development • Automation • Cloud
 
-GitHub: `magliarozach-phntm`
+GitHub:  
+https://github.com/magliarozach-phntm
+
+LinkedIn:  
+https://linkedin.com/in/zacharymagliaro
 
 ---
 
-## Disclaimer
+## 📄 License
 
-MAG PriceWatch is an educational and portfolio software project.
-
-Retailer websites may change their markup, availability rules, pricing presentation, or automated-access restrictions at any time. These changes can affect price-check reliability.
-
-Pricing and availability returned by MAG PriceWatch should be verified directly with the retailer before making a purchasing decision.
+This project is currently maintained as a portfolio and educational software engineering project.
