@@ -333,6 +333,70 @@ def scrape_target(
             url
         )
 
+        raw_html = response.text
+
+        money_matches = re.findall(
+            r'\$[0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2})?',
+            raw_html,
+        )
+
+        unique_money = list(
+            dict.fromkeys(
+                money_matches
+            )
+        )
+
+        logger.warning(
+            "TARGET RAW PRICE DIAGNOSTIC | "
+            "money_values=%s",
+            unique_money[:30],
+        )
+
+        selected_tcin = None
+
+        match = re.search(
+            r"[?&]preselect=(\d+)",
+            url,
+        )
+
+        if match:
+            selected_tcin = (
+                match.group(1)
+            )
+
+        logger.warning(
+            "TARGET TCIN DIAGNOSTIC | "
+            "selected_tcin=%s | "
+            "tcin_present_in_html=%s",
+            selected_tcin,
+            (
+                selected_tcin in raw_html
+                if selected_tcin
+                else False
+            ),
+        )
+
+        if (
+            selected_tcin
+            and selected_tcin in raw_html
+        ):
+            tcin_index = raw_html.find(
+                selected_tcin
+            )
+
+            snippet = raw_html[
+                max(
+                    0,
+                    tcin_index - 500,
+                ):
+                tcin_index + 1500
+            ]
+
+            logger.warning(
+                "TARGET TCIN SNIPPET | %s",
+                snippet,
+            )
+
         title = get_page_title(
             soup
         )
