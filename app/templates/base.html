@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>
+        {% block title %}
+        {{ app_name }}
+        {% endblock %}
+    </title>
+
+    <!-- Inter -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css"
+        rel="stylesheet"
+    >
+
+    <!-- MAG PriceWatch CSS -->
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/variables.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/layout.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/components.css') }}"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/pages.css') }}"
+    >
+
+    {% block head %}
+    {% endblock %}
+</head>
+
+
+<body class="d-flex flex-column min-vh-100">
+
+<!-- ================================================= -->
+<!-- HEADER / NAVIGATION -->
+<!-- ================================================= -->
+
+<header class="app-header">
+
+    <nav class="navbar navbar-expand-lg">
+
+        <div class="container">
+
+            <!-- BRAND -->
+            <a
+                class="navbar-brand d-flex align-items-center gap-2"
+                href="/"
+            >
+                <span class="brand-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </span>
+
+                <span>
+                    {{ app_name }}
+                </span>
+            </a>
+
+
+            <!-- MOBILE MENU -->
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNavbar"
+                aria-controls="mainNavbar"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+
+            <div
+                class="collapse navbar-collapse"
+                id="mainNavbar"
+            >
+
+                {% if current_user %}
+
+
+
+                <!-- MAIN NAVIGATION -->
+                <ul class="navbar-nav me-auto ms-lg-4 mb-3 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link
+                            {% if active_page == 'dashboard' %}
+                            active
+                            {% endif %}"
+                            href="/dashboard"
+                        >
+                            <i class="bi bi-grid me-1"></i>
+                            Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link
+                            {% if active_page == 'products' %}
+                            active
+                            {% endif %}"
+                            href="/products"
+                        >
+                            <i class="bi bi-box-seam me-1"></i>
+                            Products
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a
+                            class="nav-link
+                            {% if active_page == 'settings' %}
+                            active
+                            {% endif %}"
+                            href="/settings"
+                        >
+                            <i class="bi bi-gear me-1"></i>
+                            Settings
+                        </a>
+                    </li>
+
+                </ul>
+
+
+
+                <!-- USER ACTIONS -->
+                <div class="navbar-user d-flex align-items-center gap-3">
+
+                    <div class="user-summary d-none d-lg-block text-end">
+
+                        <div class="user-name">
+                            {{ current_user.name }}
+                        </div>
+
+                        <div class="user-email">
+                            {{ current_user.email }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="user-avatar">
+                        {{ current_user.name[0] | upper }}
+                    </div>
+
+
+                    <form
+                        method="POST"
+                        action="/logout"
+                        class="m-0"
+                    >
+                        <button
+                            type="submit"
+                            class="btn btn-outline-secondary btn-sm"
+                        >
+                            <i class="bi bi-box-arrow-right me-1"></i>
+                            Logout
+                        </button>
+                    </form>
+
+                </div>
+
+
+                {% else %}
+
+                <!-- PUBLIC NAVIGATION -->
+                <div class="ms-auto d-flex gap-2">
+
+                    <a
+                        href="/login"
+                        class="btn btn-outline-secondary"
+                    >
+                        Login
+                    </a>
+
+                    <a
+                        href="/register"
+                        class="btn btn-primary"
+                    >
+                        Get Started
+                    </a>
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </nav>
+
+</header>
+
+
+<!-- ================================================= -->
+<!-- MAIN CONTENT -->
+<!-- ================================================= -->
+
+<main class="flex-grow-1">
+
+    <div class="container py-5">
+
+        {% if flash %}
+
+        <div class="pt-4">
+
+            <div
+                class="
+                    app-flash
+                    app-flash--{{ flash.category }}
+                "
+                role="alert"
+            >
+                ...
+            </div>
+
+        </div>
+
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+
+    </div>
+
+</main>
+
+
+<!-- ================================================= -->
+<!-- FOOTER -->
+<!-- ================================================= -->
+
+<footer class="app-footer mt-auto">
+
+    <div class="container">
+
+        <div
+            class="d-flex flex-column flex-md-row
+                   justify-content-between
+                   align-items-center
+                   gap-3"
+        >
+
+            <div class="footer-brand">
+
+                <strong>
+                    {{ app_name }}
+                </strong>
+
+                <span class="text-muted ms-2">
+                    {{ app_tagline }}
+                </span>
+
+            </div>
+
+
+            <div class="footer-meta text-muted">
+
+                &copy; {{ year }}
+
+                <span class="mx-2">•</span>
+
+                Built with FastAPI &amp; PostgreSQL
+
+            </div>
+
+        </div>
+
+    </div>
+
+</footer>
+
+
+<!-- ================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ================================================= -->
+
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+></script>
+
+{% block scripts %}
+{% endblock %}
+
+</body>
+
+</html>

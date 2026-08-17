@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}
+Something Went Wrong | {{ app_name }}
+{% endblock %}
+
+{% block content %}
+
+<section class="error-page">
+
+    <div class="error-page__code error-page__code--danger">
+        500
+    </div>
+
+    <div class="error-page__icon error-page__icon--danger">
+        <i class="bi bi-exclamation-triangle"></i>
+    </div>
+
+    <h1 class="error-page__title">
+        Something went wrong.
+    </h1>
+
+    <p class="error-page__text">
+        We couldn't complete that request.
+        Please try again in a moment.
+    </p>
+
+    <div class="error-page__actions">
+
+        {% if current_user %}
+
+            <a
+                href="/dashboard"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-grid me-1"></i>
+                Back to Dashboard
+            </a>
+
+        {% else %}
+
+            <a
+                href="/"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-house me-1"></i>
+                Back Home
+            </a>
+
+        {% endif %}
+
+        <button
+            type="button"
+            class="btn btn-outline-secondary"
+            onclick="location.reload()"
+        >
+            <i class="bi bi-arrow-clockwise me-1"></i>
+            Try Again
+        </button>
+
+    </div>
+
+</section>
+
+{% endblock %}

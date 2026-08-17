@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}
+Settings | {{ app_name }}
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ================================================= -->
+<!-- PAGE HEADER -->
+<!-- ================================================= -->
+
+<section class="settings-header mb-5">
+
+    <div>
+
+        <div class="section-heading__eyebrow">
+            Account
+        </div>
+
+        <h1 class="settings-header__title">
+            Settings
+        </h1>
+
+        <p class="settings-header__subtitle">
+            Manage your account information and
+            PriceWatch preferences.
+        </p>
+
+    </div>
+
+</section>
+
+
+<div class="row g-4">
+
+    <!-- ================================================= -->
+    <!-- MAIN SETTINGS -->
+    <!-- ================================================= -->
+
+    <div class="col-xl-8">
+
+        <!-- PROFILE -->
+
+        <section class="settings-card mb-4">
+
+            <div class="settings-card__header">
+
+                <div class="settings-card__icon">
+                    <i class="bi bi-person"></i>
+                </div>
+
+                <div>
+
+                    <h2 class="settings-card__title">
+                        Profile
+                    </h2>
+
+                    <p class="settings-card__subtitle">
+                        Your basic account information.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings-card__body">
+
+                <form
+                    method="POST"
+                    action="/settings/profile"
+                >
+
+                    <div class="mb-4">
+
+                        <label
+                            for="name"
+                            class="form-label"
+                        >
+                            Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="name"
+                            name="name"
+                            class="form-control"
+                            value="{{ current_user.name }}"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="mb-4">
+
+                        <label
+                            for="email"
+                            class="form-label"
+                        >
+                            Email Address
+                        </label>
+
+                        <input
+                            type="email"
+                            id="email"
+                            class="form-control"
+                            value="{{ current_user.email }}"
+                            disabled
+                        >
+
+                        <div class="form-text">
+                            Price and stock alerts are sent
+                            to this address.
+                        </div>
+
+                    </div>
+
+
+                    <div class="settings-form-actions">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-check-lg me-1"></i>
+                            Save Profile
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- TIMEZONE -->
+        <!-- ================================================= -->
+
+        <section class="settings-card mb-4">
+
+            <div class="settings-card__header">
+
+                <div class="settings-card__icon">
+                    <i class="bi bi-globe-americas"></i>
+                </div>
+
+                <div>
+
+                    <h2 class="settings-card__title">
+                        Time Zone
+                    </h2>
+
+                    <p class="settings-card__subtitle">
+                        Choose how dates and price-check
+                        times are displayed.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings-card__body">
+
+                <form
+                    method="POST"
+                    action="/settings/timezone"
+                >
+
+                    <div class="mb-4">
+
+                        <label
+                            for="timezone"
+                            class="form-label"
+                        >
+                            Display Time Zone
+                        </label>
+
+                        <select
+                            id="timezone"
+                            name="timezone"
+                            class="form-select"
+                            required
+                        >
+
+                            {% for value, label in timezones.items() %}
+
+                                <option
+                                    value="{{ value }}"
+                                    {% if current_user.timezone == value %}
+                                        selected
+                                    {% endif %}
+                                >
+                                    {{ label }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+
+                        <div class="form-text">
+                            Product checks are stored using UTC
+                            and displayed using your selected
+                            time zone.
+                        </div>
+
+                    </div>
+
+
+                    <div class="settings-form-actions">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-clock me-1"></i>
+                            Save Time Zone
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================= -->
+        <!-- SECURITY PLACEHOLDER -->
+        <!-- ================================================= -->
+
+        <section class="settings-card">
+
+            <div class="settings-card__header">
+
+                <div class="settings-card__icon">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+
+                <div>
+
+                    <h2 class="settings-card__title">
+                        Security
+                    </h2>
+
+                    <p class="settings-card__subtitle">
+                        Change the password used to sign in to your account.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings-card__body">
+
+                <form
+                    method="POST"
+                    action="/settings/password"
+                >
+
+                    <div class="tracking-form-group">
+
+                        <label
+                            for="current_password"
+                            class="tracking-form-label"
+                        >
+                            Current Password
+                        </label>
+
+                        <div class="tracking-input-wrapper">
+
+                            <div class="tracking-input-icon">
+                                <i class="bi bi-lock"></i>
+                            </div>
+
+                            <input
+                                type="password"
+                                class="form-control tracking-input"
+                                id="current_password"
+                                name="current_password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="tracking-form-group">
+
+                        <label
+                            for="new_password"
+                            class="tracking-form-label"
+                        >
+                            New Password
+                        </label>
+
+                        <div class="tracking-input-wrapper">
+
+                            <div class="tracking-input-icon">
+                                <i class="bi bi-key"></i>
+                            </div>
+
+                            <input
+                                type="password"
+                                class="form-control tracking-input"
+                                id="new_password"
+                                name="new_password"
+                                autocomplete="new-password"
+                                minlength="8"
+                                required
+                            >
+
+                        </div>
+
+                        <div class="tracking-form-help">
+                            Use at least 8 characters.
+                        </div>
+
+                    </div>
+
+
+                    <div class="tracking-form-group mb-0">
+
+                        <label
+                            for="confirm_password"
+                            class="tracking-form-label"
+                        >
+                            Confirm New Password
+                        </label>
+
+                        <div class="tracking-input-wrapper">
+
+                            <div class="tracking-input-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+
+                            <input
+                                type="password"
+                                class="form-control tracking-input"
+                                id="confirm_password"
+                                name="confirm_password"
+                                autocomplete="new-password"
+                                minlength="8"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="settings-form-actions mt-4">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-shield-check me-1"></i>
+                            Change Password
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- ACCOUNT SIDEBAR -->
+    <!-- ================================================= -->
+
+    <div class="col-xl-4">
+
+        <section class="settings-account-card">
+
+            <div class="settings-account-card__avatar">
+
+                {% if current_user.name %}
+
+                    {{ current_user.name[0] | upper }}
+
+                {% else %}
+
+                    <i class="bi bi-person"></i>
+
+                {% endif %}
+
+            </div>
+
+
+            <h2 class="settings-account-card__name">
+                {{ current_user.name }}
+            </h2>
+
+            <div class="settings-account-card__email">
+                {{ current_user.email }}
+            </div>
+
+
+            <div class="settings-account-card__divider"></div>
+
+
+            <div class="settings-account-detail">
+
+                <div class="settings-account-detail__label">
+                    Account Status
+                </div>
+
+                <div class="settings-account-detail__value">
+
+                    <span class="status-pill status-pill--success">
+                        <span class="status-dot"></span>
+                        Active
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="settings-account-detail">
+
+                <div class="settings-account-detail__label">
+                    Time Zone
+                </div>
+
+                <div class="settings-account-detail__value">
+
+                    {{ timezones.get(
+                        current_user.timezone,
+                        current_user.timezone
+                    ) }}
+
+                </div>
+
+            </div>
+
+
+            {% if current_user.created_at %}
+
+            <div class="settings-account-detail">
+
+                <div class="settings-account-detail__label">
+                    Member Since
+                </div>
+
+                <div class="settings-account-detail__value">
+
+                    {{ local_time(
+                        current_user.created_at
+                    ).strftime(
+                        "%B %Y"
+                    ) }}
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+
+            <div class="settings-account-card__divider"></div>
+
+
+            <a
+                href="/logout"
+                class="btn btn-outline-danger w-100"
+            >
+                <i class="bi bi-box-arrow-right me-1"></i>
+                Log Out
+            </a>
+
+        </section>
+
+    </div>
+
+</div>
+
+{% endblock %}

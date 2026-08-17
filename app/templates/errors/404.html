@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}
+Page Not Found | {{ app_name }}
+{% endblock %}
+
+{% block content %}
+
+<section class="error-page">
+
+    <div class="error-page__code">
+        404
+    </div>
+
+    <div class="error-page__icon">
+        <i class="bi bi-compass"></i>
+    </div>
+
+    <h1 class="error-page__title">
+        We couldn't find that page.
+    </h1>
+
+    <p class="error-page__text">
+        The page may have been moved, deleted,
+        or the URL may be incorrect.
+    </p>
+
+    <div class="error-page__actions">
+
+        {% if current_user %}
+
+            <a
+                href="/dashboard"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-grid me-1"></i>
+                Back to Dashboard
+            </a>
+
+        {% else %}
+
+            <a
+                href="/"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-house me-1"></i>
+                Back Home
+            </a>
+
+        {% endif %}
+
+        <button
+            type="button"
+            class="btn btn-outline-secondary"
+            onclick="history.back()"
+        >
+            <i class="bi bi-arrow-left me-1"></i>
+            Go Back
+        </button>
+
+    </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}
+Sign In | {{ app_name }}
+{% endblock %}
+
+{% block content %}
+
+<section class="auth-page">
+
+    <div class="auth-card">
+
+        <div class="auth-logo">
+
+            <div class="auth-logo__icon">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+
+            <div>
+
+                <div class="auth-logo__name">
+                    {{ app_name }}
+                </div>
+
+                <div class="auth-logo__tagline">
+                    {{ app_tagline }}
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="auth-header">
+
+            <h1 class="auth-title">
+                Welcome Back
+            </h1>
+
+            <p class="auth-subtitle">
+                Sign in to continue monitoring your tracked products.
+            </p>
+
+        </div>
+
+
+        {% if error %}
+
+        <div
+            class="alert alert-danger"
+            role="alert"
+        >
+            <i class="bi bi-exclamation-circle me-2"></i>
+            {{ error }}
+        </div>
+
+        {% endif %}
+
+
+        <form
+            method="POST"
+            action="/login"
+        >
+
+            <!-- EMAIL -->
+
+            <div class="tracking-form-group">
+
+                <label
+                    class="tracking-form-label"
+                    for="email"
+                >
+                    Email Address
+                </label>
+
+                <div class="tracking-input-wrapper">
+
+                    <div class="tracking-input-icon">
+                        <i class="bi bi-envelope"></i>
+                    </div>
+
+                    <input
+                        class="form-control tracking-input"
+                        type="email"
+                        id="email"
+                        name="email"
+                        autocomplete="email"
+                        placeholder="you@example.com"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- PASSWORD -->
+
+            <div class="tracking-form-group">
+
+                <label
+                    class="tracking-form-label"
+                    for="password"
+                >
+                    Password
+                </label>
+
+                <div class="tracking-input-wrapper">
+
+                    <div class="tracking-input-icon">
+                        <i class="bi bi-lock"></i>
+                    </div>
+
+                    <input
+                        class="form-control tracking-input"
+                        type="password"
+                        id="password"
+                        name="password"
+                        autocomplete="current-password"
+                        placeholder="••••••••••••"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="btn btn-primary auth-submit"
+                type="submit"
+            >
+                <i class="bi bi-box-arrow-in-right me-2"></i>
+                Sign In
+            </button>
+
+        </form>
+
+
+        <div class="auth-divider">
+
+            <span>OR</span>
+
+        </div>
+
+
+        <div class="auth-footer">
+
+            Don't have an account?
+
+            <a href="/register">
+
+                Create one
+
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

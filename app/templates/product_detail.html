@@ -1,0 +1,861 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ product.name }} | {{ app_name }}
+{% endblock %}
+
+{% block content %}
+
+<!-- ================================================= -->
+<!-- PRODUCT HEADER -->
+<!-- ================================================= -->
+
+<section class="product-detail-hero mb-5">
+
+    <div class="product-detail-hero__main">
+
+        <a
+            href="/products"
+            class="product-detail-back"
+        >
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Products
+        </a>
+
+        <div class="product-detail-title-row">
+
+            <div>
+
+                <div class="product-detail-eyebrow">
+                    Product Analytics
+                </div>
+
+                <h1 class="product-detail-title">
+                    {{ product.name }}
+                </h1>
+
+            </div>
+
+
+            {% if product.is_in_stock is false %}
+
+                <span class="status-pill status-pill--danger">
+                    <span class="status-dot"></span>
+                    Out of Stock
+                </span>
+
+            {% elif product.is_in_stock is true %}
+
+                {% if (
+                    product.current_price is not none
+                    and product.current_price <= product.target_price
+                ) %}
+
+                    <span class="status-pill status-pill--success">
+                        <span class="status-dot"></span>
+                        Target Hit
+                    </span>
+
+                {% else %}
+
+                    <span class="status-pill status-pill--watching">
+                        <span class="status-dot"></span>
+                        In Stock
+                    </span>
+
+                {% endif %}
+
+            {% else %}
+
+                <span class="status-pill status-pill--unknown">
+                    <span class="status-dot"></span>
+                    Availability Unknown
+                </span>
+
+            {% endif %}
+
+        </div>
+
+
+        <a
+            href="{{ product.url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="product-detail-url"
+        >
+            {{ product.url }}
+            <i class="bi bi-box-arrow-up-right ms-1"></i>
+        </a>
+
+    </div>
+
+
+    <div class="product-detail-hero__actions">
+
+        <a
+            href="/products/{{ product.id }}/edit"
+            class="btn btn-outline-secondary"
+        >
+            <i class="bi bi-pencil me-1"></i>
+            Edit
+        </a>
+
+        <form
+            method="POST"
+            action="/products/{{ product.id }}/check"
+            class="m-0"
+        >
+            <button
+                type="submit"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-arrow-repeat me-1"></i>
+                Check Now
+            </button>
+        </form>
+
+        <form
+            method="POST"
+            action="/products/{{ product.id }}/delete"
+            class="m-0"
+            onsubmit="return confirm('Remove this tracked product?');"
+        >
+            <button
+                type="submit"
+                class="btn btn-outline-danger"
+            >
+                <i class="bi bi-trash me-1"></i>
+                Delete
+            </button>
+        </form>
+
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- PRICE OVERVIEW -->
+<!-- ================================================= -->
+
+<section class="product-price-overview mb-5">
+
+    <div class="product-price-main">
+
+        <div class="product-price-main__label">
+            Current Price
+        </div>
+
+        <div
+            class="
+                product-price-main__value
+                {% if (
+                    product.is_in_stock is true
+                    and product.current_price is not none
+                    and product.current_price <= product.target_price
+                ) %}
+                    product-price-main__value--success
+                {% endif %}
+            "
+        >
+
+            {% if product.is_in_stock is false %}
+
+                <span class="product-price-main__unavailable">
+                    Unavailable
+                </span>
+
+            {% elif product.current_price is not none %}
+
+                ${{ "%.2f" | format(product.current_price) }}
+
+            {% else %}
+
+                —
+
+            {% endif %}
+
+        </div>
+
+
+        {% if (
+            product.is_in_stock is not false
+            and product.current_price is not none
+        ) %}
+
+            {% set target_difference =
+                product.current_price - product.target_price
+            %}
+
+            <div class="product-price-main__difference">
+
+                {% if target_difference > 0 %}
+
+                    <i class="bi bi-arrow-up-right"></i>
+
+                    ${{ "%.2f" | format(target_difference) }}
+                    above your target
+
+                {% elif target_difference < 0 %}
+
+                    <i class="bi bi-arrow-down-right"></i>
+
+                    ${{ "%.2f" | format(-target_difference) }}
+                    below your target
+
+                {% else %}
+
+                    <i class="bi bi-bullseye"></i>
+                    Exactly at your target
+
+                {% endif %}
+
+            </div>
+
+        {% elif product.is_in_stock is false %}
+
+            <div class="product-price-main__difference">
+                We'll notify you when this product becomes available again.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <div class="product-price-target">
+
+        <div class="product-price-target__label">
+            Target Price
+        </div>
+
+        <div class="product-price-target__value">
+            ${{ "%.2f" | format(product.target_price) }}
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- PRODUCT STATS -->
+<!-- ================================================= -->
+
+<section class="row g-4 mb-5">
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="detail-stat-card">
+
+            <div class="detail-stat-card__icon detail-stat-card__icon--green">
+                <i class="bi bi-arrow-down"></i>
+            </div>
+
+            <div class="detail-stat-card__label">
+                Lowest Price
+            </div>
+
+            <div class="detail-stat-card__value">
+
+                {% if product_stats.lowest_price is not none %}
+
+                    ${{ "%.2f" | format(product_stats.lowest_price) }}
+
+                {% else %}
+
+                    —
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="detail-stat-card">
+
+            <div class="detail-stat-card__icon detail-stat-card__icon--red">
+                <i class="bi bi-arrow-up"></i>
+            </div>
+
+            <div class="detail-stat-card__label">
+                Highest Price
+            </div>
+
+            <div class="detail-stat-card__value">
+
+                {% if product_stats.highest_price is not none %}
+
+                    ${{ "%.2f" | format(product_stats.highest_price) }}
+
+                {% else %}
+
+                    —
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="detail-stat-card">
+
+            <div class="detail-stat-card__icon detail-stat-card__icon--blue">
+                <i class="bi bi-activity"></i>
+            </div>
+
+            <div class="detail-stat-card__label">
+                Average Price
+            </div>
+
+            <div class="detail-stat-card__value">
+
+                {% if product_stats.average_price is not none %}
+
+                    ${{ "%.2f" | format(product_stats.average_price) }}
+
+                {% else %}
+
+                    —
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="col-sm-6 col-xl-3">
+
+        <div class="detail-stat-card">
+
+            <div class="detail-stat-card__icon detail-stat-card__icon--purple">
+                <i class="bi bi-clock-history"></i>
+            </div>
+
+            <div class="detail-stat-card__label">
+                Price Checks
+            </div>
+
+            <div class="detail-stat-card__value">
+                {{ product_stats.check_count }}
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- ANALYTICS -->
+<!-- ================================================= -->
+
+<section class="row g-4">
+
+    <div class="col-xl-8">
+
+        <div class="analytics-card mb-4">
+
+            <div class="analytics-card__header">
+
+                <div>
+
+                    <div class="section-heading__eyebrow">
+                        Analytics
+                    </div>
+
+                    <h2 class="analytics-card__title">
+                        Price History
+                    </h2>
+
+                    <p class="analytics-card__subtitle">
+                        Historical prices recorded by {{ app_name }}.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {% if product.price_history %}
+
+                <div class="price-chart-wrapper">
+                    <canvas id="priceHistoryChart"></canvas>
+                </div>
+
+            {% else %}
+
+                <div class="analytics-empty">
+
+                    <div class="empty-state__icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+
+                    <h3>
+                        No price history yet
+                    </h3>
+
+                    <p>
+                        Run the first successful price check to begin building
+                        this product's pricing history.
+                    </p>
+
+                    <form
+                        method="POST"
+                        action="/products/{{ product.id }}/check"
+                    >
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            Check Product Now
+                        </button>
+                    </form>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+
+        {% if product.price_history %}
+
+        <div class="analytics-card">
+
+            <div class="analytics-card__header">
+
+                <div>
+
+                    <div class="section-heading__eyebrow">
+                        Activity
+                    </div>
+
+                    <h2 class="analytics-card__title">
+                        Check History
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+                <table class="table history-table align-middle mb-0">
+
+                    <thead>
+
+                        <tr>
+                            <th>Price</th>
+                            <th>Checked</th>
+                            <th class="text-end">
+                                Exact Time
+                            </th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for history in product.price_history | reverse %}
+
+                        <tr>
+
+                            <td>
+
+                                <div class="history-price">
+                                    ${{ "%.2f" | format(history.price) }}
+                                </div>
+
+                            </td>
+
+                            <td>
+
+                                <span
+                                    title="{{ local_time(history.checked_at).strftime(
+                                        '%b %d, %Y %I:%M %p %Z'
+                                    ) }}"
+                                >
+                                    {{ relative_time(history.checked_at) }}
+                                </span>
+
+                            </td>
+
+                            <td class="text-end text-muted small">
+
+                                {{ local_time(history.checked_at).strftime(
+                                    "%b %d, %Y %I:%M %p"
+                                ) }}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- TRACKING DETAILS -->
+    <!-- ================================================= -->
+
+    <div class="col-xl-4">
+
+        <div class="analytics-card tracking-details-card">
+
+            <div class="analytics-card__header">
+
+                <div>
+
+                    <div class="section-heading__eyebrow">
+                        Tracking
+                    </div>
+
+                    <h2 class="analytics-card__title">
+                        Tracking Details
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="tracking-detail">
+
+                <div class="tracking-detail__icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+
+                <div>
+
+                    <div class="tracking-detail__label">
+                        Availability
+                    </div>
+
+                    <div class="tracking-detail__value">
+
+                        {% if product.is_in_stock is true %}
+
+                            In Stock
+
+                        {% elif product.is_in_stock is false %}
+
+                            Out of Stock
+
+                        {% else %}
+
+                            Unknown
+
+                        {% endif %}
+
+                    </div>
+
+                    {% if product.is_in_stock is false %}
+
+                    <div class="tracking-detail__meta">
+                        We'll alert you when it becomes available again.
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="tracking-detail">
+
+                <div class="tracking-detail__icon">
+                    <i class="bi bi-calendar-plus"></i>
+                </div>
+
+                <div>
+
+                    <div class="tracking-detail__label">
+                        Added
+                    </div>
+
+                    <div class="tracking-detail__value">
+                        {{ local_time(product.created_at).strftime(
+                            "%b %d, %Y"
+                        ) }}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="tracking-detail">
+
+                <div class="tracking-detail__icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+
+                <div>
+
+                    <div class="tracking-detail__label">
+                        Last Checked
+                    </div>
+
+                    <div class="tracking-detail__value">
+
+                        {% if product.last_checked %}
+
+                            <span
+                                title="{{ local_time(product.last_checked).strftime(
+                                    '%b %d, %Y %I:%M %p %Z'
+                                ) }}"
+                            >
+                                {{ relative_time(product.last_checked) }}
+                            </span>
+
+                        {% else %}
+
+                            Never
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="tracking-detail">
+
+                <div class="tracking-detail__icon">
+                    <i class="bi bi-bullseye"></i>
+                </div>
+
+                <div>
+
+                    <div class="tracking-detail__label">
+                        Alert Target
+                    </div>
+
+                    <div class="tracking-detail__value">
+                        ${{ "%.2f" | format(product.target_price) }}
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {% if product.last_alerted_at %}
+
+            <div class="tracking-detail">
+
+                <div class="tracking-detail__icon">
+                    <i class="bi bi-bell"></i>
+                </div>
+
+                <div>
+
+                    <div class="tracking-detail__label">
+                        Last Price Alert
+                    </div>
+
+                    <div class="tracking-detail__value">
+                        {{ relative_time(product.last_alerted_at) }}
+                    </div>
+
+                    {% if product.last_alerted_price %}
+
+                    <div class="tracking-detail__meta">
+                        at
+                        ${{ "%.2f" | format(product.last_alerted_price) }}
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+
+            {% if product.last_stock_alert_at %}
+
+            <div class="tracking-detail">
+
+                <div class="tracking-detail__icon">
+                    <i class="bi bi-box2-heart"></i>
+                </div>
+
+                <div>
+
+                    <div class="tracking-detail__label">
+                        Last Stock Alert
+                    </div>
+
+                    <div class="tracking-detail__value">
+                        {{ relative_time(product.last_stock_alert_at) }}
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+
+            <div class="tracking-details-card__footer">
+
+                <a
+                    href="{{ product.url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-outline-secondary w-100"
+                >
+                    <i class="bi bi-box-arrow-up-right me-1"></i>
+                    Open Product Page
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const chartLabels = {{ chart_labels | tojson }};
+    const chartPrices = {{ chart_prices | tojson }};
+    const targetPrice = {{ product.target_price | float }};
+
+    const chartCanvas = document.getElementById(
+        "priceHistoryChart"
+    );
+
+    if (
+        chartCanvas &&
+        chartPrices.length > 0
+    ) {
+        const singlePoint = chartPrices.length === 1;
+
+        new Chart(
+            chartCanvas,
+            {
+                type: "line",
+
+                data: {
+                    labels: chartLabels,
+
+                    datasets: [
+                        {
+                            label: "Price",
+                            data: chartPrices,
+                            tension: 0.35,
+                            fill: false,
+                            showLine: !singlePoint,
+                            pointRadius: singlePoint ? 6 : 3,
+                            pointHoverRadius: 7,
+                            borderWidth: 2
+                        },
+                        {
+                            label: "Target Price",
+                            data: chartPrices.map(
+                                () => targetPrice
+                            ),
+                            borderDash: [6, 6],
+                            pointRadius: 0,
+                            borderWidth: 2,
+                            tension: 0
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    interaction: {
+                        intersect: false,
+                        mode: "index"
+                    },
+
+                    plugins: {
+                        legend: {
+                            position: "bottom"
+                        },
+
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return (
+                                        context.dataset.label +
+                                        ": $" +
+                                        Number(
+                                            context.raw
+                                        ).toFixed(2)
+                                    );
+                                }
+                            }
+                        }
+                    },
+
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+
+                        y: {
+                            beginAtZero: false,
+
+                            ticks: {
+                                callback: function(value) {
+                                    return (
+                                        "$" +
+                                        Number(value).toLocaleString()
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        );
+    }
+</script>
+
+{% endblock %}
