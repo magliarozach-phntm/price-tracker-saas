@@ -2,13 +2,14 @@ import logging
 from urllib.parse import urlparse
 
 from app.services.scrapers.amazon import scrape_amazon
-
+from app.services.scrapers.target import scrape_target
 
 logger = logging.getLogger(__name__)
 
 
 SCRAPERS = {
     "amazon.": scrape_amazon,
+    "target.": scrape_target,
 }
 
 
