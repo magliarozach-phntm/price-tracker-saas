@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>MAG PriceWatch Stock Alert</title>
+</head>
+
+
+<body style="
+    margin:0;
+    padding:0;
+    background:#f5f7fa;
+    font-family:Arial,Helvetica,sans-serif;
+    color:#212529;
+">
+
+<table
+    role="presentation"
+    width="100%"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+    style="
+        background:#f5f7fa;
+        padding:40px 15px;
+    "
+>
+
+<tr>
+
+<td align="center">
+
+<table
+    role="presentation"
+    width="100%"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+    style="
+        max-width:600px;
+        background:#ffffff;
+        border-radius:14px;
+        overflow:hidden;
+        box-shadow:0 6px 20px rgba(0,0,0,.08);
+    "
+>
+
+<!-- ============================================== -->
+<!-- HEADER -->
+<!-- ============================================== -->
+
+<tr>
+
+<td style="
+    background:#212529;
+    padding:28px 36px;
+">
+
+<div style="
+    color:#ffffff;
+    font-size:26px;
+    font-weight:bold;
+">
+
+📈 MAG PriceWatch
+
+</div>
+
+<div style="
+    margin-top:6px;
+    color:#adb5bd;
+    font-size:14px;
+">
+
+Automated SaaS Price Monitoring Platform
+
+</div>
+
+</td>
+
+</tr>
+
+
+<!-- ============================================== -->
+<!-- CONTENT -->
+<!-- ============================================== -->
+
+<tr>
+
+<td style="padding:40px 36px;">
+
+<div style="
+    margin-bottom:10px;
+    color:#198754;
+    font-size:13px;
+    font-weight:bold;
+    letter-spacing:1px;
+    text-transform:uppercase;
+">
+
+BACK IN STOCK
+
+</div>
+
+
+<h1 style="
+    margin:0 0 18px;
+    color:#212529;
+    font-size:30px;
+    line-height:1.25;
+">
+
+{{ product_name }}
+
+</h1>
+
+
+<p style="
+    margin:0 0 28px;
+    color:#495057;
+    font-size:16px;
+    line-height:1.7;
+">
+
+Great news — a product you were waiting for is available again.
+
+</p>
+
+
+<!-- ============================================== -->
+<!-- STATUS CARD -->
+<!-- ============================================== -->
+
+<div style="
+    margin-bottom:30px;
+    padding:26px;
+    background:#ecfdf3;
+    border:1px solid #bbf7d0;
+    border-radius:12px;
+    text-align:center;
+">
+
+<div style="
+    margin-bottom:8px;
+    color:#15803d;
+    font-size:15px;
+    font-weight:bold;
+">
+
+✓ Available Now
+
+</div>
+
+
+{% if price is not none %}
+
+<div style="
+    color:#6b7280;
+    font-size:13px;
+">
+
+Current Price
+
+</div>
+
+<div style="
+    margin-top:6px;
+    color:#198754;
+    font-size:38px;
+    font-weight:bold;
+">
+
+${{ "%.2f"|format(price) }}
+
+</div>
+
+{% else %}
+
+<div style="
+    color:#15803d;
+    font-size:18px;
+    font-weight:bold;
+">
+
+Price unavailable — check the retailer for the latest price.
+
+</div>
+
+{% endif %}
+
+</div>
+
+
+<p style="
+    margin:0 0 30px;
+    color:#6c757d;
+    font-size:13px;
+    line-height:1.7;
+">
+
+Stock can change quickly. If you've been waiting for this item,
+you may want to check the product page before it sells out again.
+
+</p>
+
+
+<!-- ============================================== -->
+<!-- CTA -->
+<!-- ============================================== -->
+
+<table
+    role="presentation"
+    align="center"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+>
+
+<tr>
+
+<td
+    align="center"
+    bgcolor="#0d6efd"
+    style="
+        border-radius:8px;
+    "
+>
+
+<a
+    href="{{ url }}"
+    target="_blank"
+    style="
+        display:inline-block;
+        padding:15px 32px;
+        color:#ffffff;
+        text-decoration:none;
+        font-size:16px;
+        font-weight:bold;
+    "
+>
+
+View Product →
+
+</a>
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+
+<!-- ============================================== -->
+<!-- FOOTER -->
+<!-- ============================================== -->
+
+<tr>
+
+<td style="
+    background:#f8f9fa;
+    padding:24px 36px;
+    color:#6c757d;
+    font-size:12px;
+    line-height:1.6;
+    text-align:center;
+">
+
+You're receiving this message because you're tracking
+this product with <strong>MAG PriceWatch</strong>.
+
+<br><br>
+
+© {{ year }} MAG PriceWatch
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+
+</tr>
+
+</table>
+
+</body>
+
+</html>

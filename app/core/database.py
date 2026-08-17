@@ -1,30 +1,24 @@
-import sqlite3
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+import os
+from collections.abc import Generator
 
-import sqlite3
-from pathlib import Path
+load_dotenv()
 
-DATA_DIR = Path("data")
-DATA_DIR.mkdir(exist_ok=True)
 
-DB_PATH = DATA_DIR / "prices.db"
+class Base(DeclarativeBase):
+    pass
 
-conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 
-cursor = conn.cursor()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS price_history (
-    product TEXT,
-    price REAL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-)
-""")
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-conn.commit()
-
-def save_price(product: str, price: float):
-    cursor.execute(
-        "INSERT INTO price_history (product, price) VALUES (?, ?)",
-        (product, price)
-    )
-    conn.commit()
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

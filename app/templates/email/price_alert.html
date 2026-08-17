@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>MAG PriceWatch Alert</title>
+</head>
+
+<body style="
+    margin:0;
+    padding:0;
+    background:#f5f7fa;
+    font-family:Arial,Helvetica,sans-serif;
+    color:#212529;
+">
+
+<table
+    role="presentation"
+    width="100%"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+    style="background:#f5f7fa;padding:40px 15px;"
+>
+
+<tr>
+<td align="center">
+
+<table
+    role="presentation"
+    width="100%"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+    style="
+        max-width:600px;
+        background:#ffffff;
+        border-radius:14px;
+        overflow:hidden;
+        box-shadow:0 6px 20px rgba(0,0,0,.08);
+">
+
+<!-- ================= HEADER ================= -->
+
+<tr>
+<td style="
+    background:#212529;
+    padding:28px 36px;
+">
+
+<div style="
+    font-size:26px;
+    color:#ffffff;
+    font-weight:bold;
+">
+📈 MAG PriceWatch
+</div>
+
+<div style="
+    color:#adb5bd;
+    margin-top:6px;
+    font-size:14px;
+">
+Automated SaaS Price Monitoring Platform
+</div>
+
+</td>
+</tr>
+
+<!-- ================= BODY ================= -->
+
+<tr>
+<td style="padding:40px 36px;">
+
+<div style="
+    color:#198754;
+    font-weight:bold;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+">
+PRICE DROP DETECTED
+</div>
+
+<h1 style="
+    margin:10px 0 30px;
+    font-size:30px;
+    line-height:1.25;
+">
+{{ product_name }}
+</h1>
+
+<p style="
+    margin:0 0 30px;
+    color:#495057;
+    font-size:16px;
+    line-height:1.7;
+">
+Good news! Your tracked product has reached or dropped below
+the target price you selected.
+</p>
+
+<!-- ================= PRICE CARDS ================= -->
+
+<table
+    role="presentation"
+    width="100%"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+>
+
+<tr>
+
+<td
+    width="48%"
+    valign="top"
+    style="
+        background:#f8f9fa;
+        border-radius:10px;
+        padding:20px;
+    "
+>
+
+<div style="
+    color:#6c757d;
+    font-size:13px;
+">
+Current Price
+</div>
+
+<div style="
+    margin-top:8px;
+    font-size:30px;
+    color:#198754;
+    font-weight:bold;
+">
+${{ "%.2f"|format(price) }}
+</div>
+
+</td>
+
+<td width="4%"></td>
+
+<td
+    width="48%"
+    valign="top"
+    style="
+        background:#f8f9fa;
+        border-radius:10px;
+        padding:20px;
+    "
+>
+
+<div style="
+    color:#6c757d;
+    font-size:13px;
+">
+Your Target
+</div>
+
+<div style="
+    margin-top:8px;
+    font-size:30px;
+    font-weight:bold;
+">
+${{ "%.2f"|format(target_price) }}
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+<!-- ================= SAVINGS ================= -->
+
+<div style="
+    margin-top:28px;
+    margin-bottom:34px;
+    background:#e8f5e9;
+    border:1px solid #c8e6c9;
+    border-radius:12px;
+    padding:24px;
+    text-align:center;
+">
+
+<div style="
+    color:#2e7d32;
+    font-size:15px;
+    font-weight:bold;
+">
+🔥 Great News!
+</div>
+
+<div style="
+    margin-top:6px;
+    color:#2e7d32;
+    font-size:15px;
+">
+You beat your target price by
+</div>
+
+<div style="
+    margin-top:10px;
+    font-size:38px;
+    font-weight:bold;
+    color:#198754;
+">
+${{ "%.2f"|format(savings) }}
+</div>
+
+</div>
+
+<!-- ================= CTA ================= -->
+
+<table
+    role="presentation"
+    align="center"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+>
+
+<tr>
+
+<td
+    align="center"
+    bgcolor="#0d6efd"
+    style="
+        border-radius:8px;
+    "
+>
+
+<a
+    href="{{ url }}"
+    target="_blank"
+    style="
+        display:inline-block;
+        padding:15px 32px;
+        color:#ffffff;
+        text-decoration:none;
+        font-size:16px;
+        font-weight:bold;
+    "
+>
+View Product →
+</a>
+
+</td>
+
+</tr>
+
+</table>
+
+<p style="
+    margin-top:32px;
+    font-size:13px;
+    color:#6c757d;
+    line-height:1.6;
+">
+Prices can change quickly.
+If you're interested, we recommend checking out the product
+before the price increases again.
+</p>
+
+</td>
+</tr>
+
+<!-- ================= FOOTER ================= -->
+
+<tr>
+
+<td style="
+    background:#f8f9fa;
+    padding:24px 36px;
+    text-align:center;
+    color:#6c757d;
+    font-size:12px;
+    line-height:1.6;
+">
+
+You're receiving this email because you created
+a price alert with <strong>MAG PriceWatch</strong>.
+
+<br><br>
+
+© {{ year }} MAG PriceWatch
+
+</td>
+
+</tr>
+
+</table>
+
+</td>
+</tr>
+
+</table>
+
+</body>
+</html>

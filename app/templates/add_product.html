@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}
+Track Product | {{ app_name }}
+{% endblock %}
+
+{% block content %}
+
+<section class="add-product-page">
+
+    <div class="add-product-page__header">
+
+        <a
+            href="/products"
+            class="product-detail-back"
+        >
+            <i class="bi bi-arrow-left me-1"></i>
+            Back to Products
+        </a>
+
+        <div class="section-heading__eyebrow">
+            New Tracker
+        </div>
+
+        <h1 class="add-product-page__title">
+            Track a Product
+        </h1>
+
+        <p class="add-product-page__subtitle">
+            Add a product page, choose your target price,
+            and {{ app_name }} will monitor it automatically.
+        </p>
+
+    </div>
+
+
+    <div class="row g-4">
+
+        <!-- ================================================= -->
+        <!-- FORM -->
+        <!-- ================================================= -->
+
+        <div class="col-lg-8">
+
+            <div class="add-product-card">
+
+                {% if error %}
+
+                <div
+                    class="alert alert-danger"
+                    role="alert"
+                >
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    {{ error }}
+                </div>
+
+                {% endif %}
+
+
+                <form
+                    method="POST"
+                    action="/products/add"
+                >
+
+                    <!-- PRODUCT NAME -->
+
+                    <div class="tracking-form-group">
+
+                        <label
+                            for="name"
+                            class="tracking-form-label"
+                        >
+                            Product Name
+                        </label>
+
+                        <div class="tracking-input-wrapper">
+
+                            <div class="tracking-input-icon">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+
+                            <input
+                                type="text"
+                                class="form-control tracking-input"
+                                id="name"
+                                name="name"
+                                value="{{ form_data.name if form_data else '' }}"
+                                placeholder="Example: DJI Mavic 4 Pro"
+                                required
+                                maxlength="255"
+                            >
+                        </div>
+
+                        <div class="tracking-form-help">
+                            Give the product a name you'll recognize
+                            on your dashboard.
+                        </div>
+
+                    </div>
+
+
+                    <!-- PRODUCT URL -->
+
+                    <div class="tracking-form-group">
+
+                        <label
+                            for="url"
+                            class="tracking-form-label"
+                        >
+                            Product URL
+                        </label>
+
+                        <div class="tracking-input-wrapper">
+
+                            <div class="tracking-input-icon">
+                                <i class="bi bi-link-45deg"></i>
+                            </div>
+
+                            <input
+                                type="url"
+                                class="form-control tracking-input"
+                                id="url"
+                                name="url"
+                                value="{{ form_data.url if form_data else '' }}"
+                                placeholder="https://www.amazon.com/..."
+                                required
+                                maxlength="1000"
+                            >
+
+                        </div>
+
+                        <div class="tracking-form-help">
+                            Paste the full product-page URL from a
+                            supported retailer.
+                        </div>
+
+                    </div>
+
+
+                    <!-- TARGET PRICE -->
+
+                    <div class="tracking-form-group mb-0">
+
+                        <label
+                            for="target_price"
+                            class="tracking-form-label"
+                        >
+                            Target Price
+                        </label>
+
+                        <div class="target-price-input">
+
+                            <div class="target-price-input__currency">
+                                $
+                            </div>
+
+                            <input
+                                type="number"
+                                class="form-control"
+                                id="target_price"
+                                name="target_price"
+                                min="0.01"
+                                step="0.01"
+                                value="{{ form_data.target_price if form_data else '' }}"
+                                placeholder="249.99"
+                                required
+                            >
+
+                        </div>
+
+                        <div class="tracking-form-help">
+                            We'll alert you when the live price reaches
+                            or drops below this amount.
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    <div class="tracking-form-actions">
+
+                        <a
+                            href="/products"
+                            class="btn btn-outline-secondary"
+                        >
+                            Cancel
+                        </a>
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary"
+                        >
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Start Tracking
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- SIDE INFO -->
+        <!-- ================================================= -->
+
+        <div class="col-lg-4">
+
+            <aside class="tracking-info-card">
+
+                <div class="tracking-info-card__icon">
+                    <i class="bi bi-radar"></i>
+                </div>
+
+                <h2 class="tracking-info-card__title">
+                    What happens next?
+                </h2>
+
+                <div class="tracking-step">
+
+                    <div class="tracking-step__number">
+                        1
+                    </div>
+
+                    <div>
+
+                        <div class="tracking-step__title">
+                            Price monitoring begins
+                        </div>
+
+                        <div class="tracking-step__text">
+                            {{ app_name }} checks the retailer
+                            automatically.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="tracking-step">
+
+                    <div class="tracking-step__number">
+                        2
+                    </div>
+
+                    <div>
+
+                        <div class="tracking-step__title">
+                            History builds over time
+                        </div>
+
+                        <div class="tracking-step__text">
+                            Every successful check becomes part of
+                            the product's price history.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="tracking-step">
+
+                    <div class="tracking-step__number">
+                        3
+                    </div>
+
+                    <div>
+
+                        <div class="tracking-step__title">
+                            Get notified
+                        </div>
+
+                        <div class="tracking-step__text">
+                            When the product reaches your target,
+                            you'll receive a price alert by email.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="tracking-supported">
+
+                    <div class="tracking-supported__label">
+                        Current Support
+                    </div>
+
+                    <div class="tracking-supported__retailer">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Amazon
+                    </div>
+
+                    <div class="tracking-supported__meta">
+                        More retailers coming soon.
+                    </div>
+
+                </div>
+
+            </aside>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

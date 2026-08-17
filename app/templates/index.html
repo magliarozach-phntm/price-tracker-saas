@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ app_name }} | Never Miss a Price Drop
+{% endblock %}
+
+{% block content %}
+
+<!-- ================================================= -->
+<!-- HERO -->
+<!-- ================================================= -->
+
+<section class="landing-hero">
+
+    <div class="landing-hero__content">
+
+        <div class="landing-hero__eyebrow">
+            Smarter Price Tracking
+        </div>
+
+        <h1 class="landing-hero__title">
+            Never miss a price drop again.
+        </h1>
+
+        <p class="landing-hero__subtitle">
+            Track products, monitor price history, and get
+            automatic email alerts when the price reaches your target.
+        </p>
+
+        <div class="landing-hero__actions">
+
+            <a
+                href="/register"
+                class="btn btn-primary btn-lg"
+            >
+                <i class="bi bi-graph-up-arrow me-2"></i>
+                Start Tracking Free
+            </a>
+
+            <a
+                href="/login"
+                class="btn btn-outline-secondary btn-lg"
+            >
+                Sign In
+            </a>
+
+        </div>
+
+        <div class="landing-hero__trust">
+
+            <span>
+                <i class="bi bi-check-circle-fill"></i>
+                Automated monitoring
+            </span>
+
+            <span>
+                <i class="bi bi-check-circle-fill"></i>
+                Price history
+            </span>
+
+            <span>
+                <i class="bi bi-check-circle-fill"></i>
+                Instant email alerts
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="landing-hero__visual">
+
+        <div class="landing-preview-card">
+
+            <div class="landing-preview-card__header">
+
+                <div>
+
+                    <div class="landing-preview-card__name">
+                        DJI Mavic 4 Pro
+                    </div>
+
+                    <div class="landing-preview-card__status">
+                        <span class="status-dot"></span>
+                        Watching
+                    </div>
+
+                </div>
+
+                <i class="bi bi-box-seam"></i>
+
+            </div>
+
+
+            <div class="landing-preview-card__price-label">
+                Current Price
+            </div>
+
+            <div class="landing-preview-card__price">
+                $3,525.00
+            </div>
+
+
+            <div class="landing-preview-card__target">
+
+                <span>
+                    Target Price
+                </span>
+
+                <strong>
+                    $2,700.00
+                </strong>
+
+            </div>
+
+
+            <div class="landing-preview-chart">
+
+                <div class="landing-preview-chart__line"></div>
+
+            </div>
+
+
+            <div class="landing-preview-card__footer">
+
+                <span>
+                    Last checked 4 minutes ago
+                </span>
+
+                <span class="status-pill status-pill--watching">
+                    <span class="status-dot"></span>
+                    Tracking
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- FEATURES -->
+<!-- ================================================= -->
+
+<section class="landing-section">
+
+    <div class="landing-section__header">
+
+        <div class="section-heading__eyebrow">
+            How It Works
+        </div>
+
+        <h2 class="landing-section__title">
+            Set it once. Let {{ app_name }} do the rest.
+        </h2>
+
+        <p class="landing-section__subtitle">
+            Price tracking shouldn't require constantly refreshing
+            product pages.
+        </p>
+
+    </div>
+
+
+    <div class="row g-4">
+
+        <div class="col-md-4">
+
+            <div class="landing-feature-card">
+
+                <div class="landing-feature-card__icon">
+                    <i class="bi bi-link-45deg"></i>
+                </div>
+
+                <div class="landing-feature-card__number">
+                    01
+                </div>
+
+                <h3>
+                    Add a Product
+                </h3>
+
+                <p>
+                    Paste a supported product URL and choose
+                    the price you're willing to pay.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="landing-feature-card">
+
+                <div class="landing-feature-card__icon">
+                    <i class="bi bi-radar"></i>
+                </div>
+
+                <div class="landing-feature-card__number">
+                    02
+                </div>
+
+                <h3>
+                    We Monitor It
+                </h3>
+
+                <p>
+                    Automated checks update the current price
+                    and build a historical pricing record.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-4">
+
+            <div class="landing-feature-card">
+
+                <div class="landing-feature-card__icon">
+                    <i class="bi bi-envelope-check"></i>
+                </div>
+
+                <div class="landing-feature-card__number">
+                    03
+                </div>
+
+                <h3>
+                    Get the Alert
+                </h3>
+
+                <p>
+                    When the price reaches your target,
+                    a branded alert lands directly in your inbox.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- VALUE SECTION -->
+<!-- ================================================= -->
+
+<section class="landing-value">
+
+    <div class="landing-value__content">
+
+        <div class="section-heading__eyebrow">
+            Price Intelligence
+        </div>
+
+        <h2 class="landing-value__title">
+            See more than today's price.
+        </h2>
+
+        <p class="landing-value__subtitle">
+            Every successful check becomes part of the product's
+            price history, giving you context before you buy.
+        </p>
+
+
+        <div class="landing-value__list">
+
+            <div class="landing-value__item">
+                <i class="bi bi-check2"></i>
+                Current and target price comparison
+            </div>
+
+            <div class="landing-value__item">
+                <i class="bi bi-check2"></i>
+                Lowest, highest, and average historical pricing
+            </div>
+
+            <div class="landing-value__item">
+                <i class="bi bi-check2"></i>
+                Interactive price-history charts
+            </div>
+
+            <div class="landing-value__item">
+                <i class="bi bi-check2"></i>
+                Automatic duplicate-alert prevention
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="landing-value__stats">
+
+        <div class="landing-mini-stat">
+
+            <div class="landing-mini-stat__icon">
+                <i class="bi bi-arrow-down"></i>
+            </div>
+
+            <div class="landing-mini-stat__label">
+                Lowest Seen
+            </div>
+
+            <div class="landing-mini-stat__value">
+                $3,419
+            </div>
+
+        </div>
+
+
+        <div class="landing-mini-stat">
+
+            <div class="landing-mini-stat__icon">
+                <i class="bi bi-activity"></i>
+            </div>
+
+            <div class="landing-mini-stat__label">
+                Average
+            </div>
+
+            <div class="landing-mini-stat__value">
+                $3,558
+            </div>
+
+        </div>
+
+
+        <div class="landing-mini-stat">
+
+            <div class="landing-mini-stat__icon">
+                <i class="bi bi-clock-history"></i>
+            </div>
+
+            <div class="landing-mini-stat__label">
+                Checks Logged
+            </div>
+
+            <div class="landing-mini-stat__value">
+                48
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- CURRENT SUPPORT -->
+<!-- ================================================= -->
+
+<section class="landing-support">
+
+    <div>
+
+        <div class="section-heading__eyebrow">
+            Retailer Support
+        </div>
+
+        <h2 class="landing-support__title">
+            Built with a modular scraper architecture.
+        </h2>
+
+        <p class="landing-support__subtitle">
+            Amazon support is live today, with additional retailers
+            designed to plug into the same tracking engine later.
+        </p>
+
+    </div>
+
+
+    <div class="landing-retailer">
+
+        <div class="landing-retailer__icon">
+            <i class="bi bi-check-lg"></i>
+        </div>
+
+        <div>
+
+            <div class="landing-retailer__name">
+                Amazon
+            </div>
+
+            <div class="landing-retailer__status">
+                Currently supported
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ================================================= -->
+<!-- CTA -->
+<!-- ================================================= -->
+
+<section class="landing-cta">
+
+    <div class="landing-cta__glow"></div>
+
+    <div class="landing-cta__content">
+
+        <div class="landing-cta__eyebrow">
+            Start Monitoring
+        </div>
+
+        <h2>
+            Stop checking prices manually.
+        </h2>
+
+        <p>
+            Create an account, add your first product,
+            and let {{ app_name }} watch the price for you.
+        </p>
+
+        <div class="landing-cta__actions">
+
+            <a
+                href="/register"
+                class="btn btn-light btn-lg"
+            >
+                Create Free Account
+            </a>
+
+            <a
+                href="/login"
+                class="btn btn-outline-light btn-lg"
+            >
+                Sign In
+            </a>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}

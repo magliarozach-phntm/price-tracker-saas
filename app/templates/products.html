@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}
+Products | {{ app_name }}
+{% endblock %}
+
+{% block content %}
+
+<section class="products-page-header mb-5">
+
+    <div>
+        <div class="section-heading__eyebrow">
+            Product Management
+        </div>
+
+        <h1 class="products-page-title">
+            Tracked Products
+        </h1>
+
+        <p class="products-page-subtitle">
+            Manage the products you're monitoring and review
+            their latest pricing and availability status.
+        </p>
+    </div>
+
+    <div class="products-page-header__actions">
+        <a
+            href="/products/add"
+            class="btn btn-primary btn-lg"
+        >
+            <i class="bi bi-plus-lg me-2"></i>
+            Track Product
+        </a>
+    </div>
+
+</section>
+
+
+{% if products %}
+
+<section class="products-summary mb-4">
+
+    <div class="products-summary__item">
+        <div class="products-summary__label">
+            Total Products
+        </div>
+
+        <div class="products-summary__value">
+            {{ products | length }}
+        </div>
+    </div>
+
+    <div class="products-summary__divider"></div>
+
+    <div class="products-summary__item">
+        <div class="products-summary__label">
+            Monitoring
+        </div>
+
+        <div class="products-summary__value">
+            {{ products | length }}
+        </div>
+    </div>
+
+    <div class="products-summary__divider"></div>
+
+    <div class="products-summary__item">
+        <div class="products-summary__label">
+            Last Updated
+        </div>
+
+        <div class="products-summary__value products-summary__value--small">
+
+            {% set checked_products =
+                products
+                | selectattr("last_checked")
+                | list
+            %}
+
+            {% if checked_products %}
+
+                {% set latest_check =
+                    checked_products
+                    | map(attribute="last_checked")
+                    | max
+                %}
+
+                {{ relative_time(latest_check) }}
+
+            {% else %}
+
+                Never
+
+            {% endif %}
+
+        </div>
+    </div>
+
+</section>
+
+
+<section class="products-table-card">
+
+    <div class="table-responsive">
+
+        <table class="table products-table align-middle mb-0">
+
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Current Price</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Last Checked</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for product in products %}
+
+                <tr>
+
+                    <!-- PRODUCT -->
+                    <td>
+
+                        <div class="products-table__product">
+
+                            <div class="products-table__product-icon">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+
+                            <div class="products-table__product-info">
+
+                                <a
+                                    href="/products/{{ product.id }}"
+                                    class="products-table__product-name"
+                                >
+                                    {{ product.name }}
+                                </a>
+
+                                <a
+                                    href="{{ product.url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="products-table__product-url"
+                                >
+                                    {{ product.url }}
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </td>
+
+
+                    <!-- CURRENT PRICE -->
+                    <td>
+
+                        {% if product.is_in_stock is false %}
+
+                            <span class="products-table__muted">
+                                Unavailable
+                            </span>
+
+                        {% elif product.current_price is not none %}
+
+                            <div
+                                class="
+                                    products-table__price
+                                    {% if product.current_price <= product.target_price %}
+                                        products-table__price--success
+                                    {% endif %}
+                                "
+                            >
+                                ${{ "%.2f" | format(product.current_price) }}
+                            </div>
+
+                        {% else %}
+
+                            <span class="products-table__muted">
+                                Not checked
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- TARGET -->
+                    <td>
+                        <div class="products-table__target">
+                            ${{ "%.2f" | format(product.target_price) }}
+                        </div>
+                    </td>
+
+
+                    <!-- STATUS -->
+                    <td>
+
+                        {% if product.is_in_stock is false %}
+
+                            <span class="status-pill status-pill--danger">
+                                <span class="status-dot"></span>
+                                Out of Stock
+                            </span>
+
+                        {% elif product.is_in_stock is true %}
+
+                            {% if (
+                                product.current_price is not none
+                                and product.current_price <= product.target_price
+                            ) %}
+
+                                <span class="status-pill status-pill--success">
+                                    <span class="status-dot"></span>
+                                    Target Hit
+                                </span>
+
+                            {% else %}
+
+                                <span class="status-pill status-pill--watching">
+                                    <span class="status-dot"></span>
+                                    In Stock
+                                </span>
+
+                            {% endif %}
+
+                        {% else %}
+
+                            <span class="status-pill status-pill--unknown">
+                                <span class="status-dot"></span>
+                                Unknown
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- LAST CHECKED -->
+                    <td>
+
+                        {% if product.last_checked %}
+
+                            <div
+                                class="products-table__last-check"
+                                title="{{ local_time(product.last_checked).strftime(
+                                    '%b %d, %Y %I:%M %p %Z'
+                                ) }}"
+                            >
+                                {{ relative_time(product.last_checked) }}
+                            </div>
+
+                            <div class="products-table__last-check-exact">
+                                {{ local_time(product.last_checked).strftime(
+                                    "%b %d, %I:%M %p"
+                                ) }}
+                            </div>
+
+                        {% else %}
+
+                            <span class="products-table__muted">
+                                Never
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- ACTIONS -->
+                    <td class="text-end">
+
+                        <div class="products-table__actions">
+
+                            <a
+                                href="/products/{{ product.id }}"
+                                class="btn btn-sm btn-outline-secondary"
+                                title="View product details"
+                            >
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <a
+                                href="/products/{{ product.id }}/edit"
+                                class="btn btn-sm btn-outline-secondary"
+                                title="Edit product"
+                            >
+                                <i class="bi bi-pencil"></i>
+                            </a>
+
+                            <form
+                                method="POST"
+                                action="/products/{{ product.id }}/check"
+                                class="m-0"
+                            >
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm btn-primary"
+                                    title="Check price now"
+                                >
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                            </form>
+
+                            <form
+                                method="POST"
+                                action="/products/{{ product.id }}/delete"
+                                class="m-0"
+                                onsubmit="return confirm(
+                                    'Remove {{ product.name | e }} from your tracked products?'
+                                );"
+                            >
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm btn-outline-danger"
+                                    title="Delete product"
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+{% else %}
+
+<section class="empty-state">
+
+    <div class="empty-state__icon">
+        <i class="bi bi-box-seam"></i>
+    </div>
+
+    <h2 class="empty-state__title">
+        Nothing tracked yet
+    </h2>
+
+    <p class="empty-state__text">
+        Add your first product and {{ app_name }}
+        will begin monitoring its price and availability automatically.
+    </p>
+
+    <a
+        href="/products/add"
+        class="btn btn-primary btn-lg"
+    >
+        <i class="bi bi-plus-lg me-2"></i>
+        Track Your First Product
+    </a>
+
+</section>
+
+{% endif %}
+
+{% endblock %}
