@@ -1,29 +1,164 @@
+import logging
+from decimal import Decimal, InvalidOperation
+
 from app.services.scrapers.base import (
     ScrapeResult,
+    clean_price,
     fetch_page,
     get_page_title,
-    clean_price,
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 PRICE_SELECTORS = [
-    "#corePriceDisplay_desktop_feature_div .a-price .a-offscreen",
-    "#corePrice_feature_div .a-price .a-offscreen",
-    "#apex_desktop .a-price .a-offscreen",
-    "#price_inside_buybox",
+    "#corePrice_feature_div .a-offscreen",
+    "#corePriceDisplay_desktop_feature_div .a-offscreen",
+    "#corePriceDisplay_mobile_feature_div .a-offscreen",
+    "#apex_desktop .a-offscreen",
+    "#apex_mobile .a-offscreen",
+    ".priceToPay .a-offscreen",
+    ".reinventPricePriceToPayMargin .a-offscreen",
+    ".a-price .a-offscreen",
 ]
 
-AVAILABILITY_SELECTORS = [
-    "#availability",
-    "#outOfStock",
-    "#availabilityInsideBuyBox_feature_div",
+
+OUT_OF_STOCK_PHRASES = [
+    "currently unavailable",
+    "temporarily out of stock",
+    "we don't know when or if this item will be back in stock",
+    "no featured offers available",
 ]
 
-BUY_BUTTON_SELECTORS = [
-    "#add-to-cart-button",
-    "#buy-now-button",
-    "#submit.add-to-cart",
+
+BOT_PAGE_PHRASES = [
+    "robot check",
+    "sorry! something went wrong!",
+    "enter the characters you see below",
+    "type the characters you see in this image",
 ]
+
+
+def _is_bot_page(
+    title: str,
+    page_text: str,
+) -> bool:
+    combined = (
+        f"{title} {page_text}"
+        .lower()
+    )
+
+    return any(
+        phrase in combined
+        for phrase in BOT_PAGE_PHRASES
+    )
+
+
+def _get_availability_text(
+    soup,
+) -> str:
+    selectors = [
+        "#availability",
+        "#outOfStock",
+        "#availabilityInsideBuyBox_feature_div",
+    ]
+
+    availability_parts = []
+
+    for selector in selectors:
+        element = soup.select_one(
+            selector
+        )
+
+        if element:
+            text = element.get_text(
+                " ",
+                strip=True,
+            )
+
+            if text:
+                availability_parts.append(
+                    text
+                )
+
+    return " ".join(
+        availability_parts
+    ).lower()
+
+
+def _is_out_of_stock(
+    soup,
+) -> bool:
+    availability_text = (
+        _get_availability_text(
+            soup
+        )
+    )
+
+    if any(
+        phrase in availability_text
+        for phrase in OUT_OF_STOCK_PHRASES
+    ):
+        return True
+
+    add_to_cart = soup.select_one(
+        "#add-to-cart-button"
+    )
+
+    buy_now = soup.select_one(
+        "#buy-now-button"
+    )
+
+    # If Amazon explicitly says unavailable AND
+    # there are no purchase controls, treat it
+    # as out of stock.
+    if (
+        "unavailable"
+        in availability_text
+        and add_to_cart is None
+        and buy_now is None
+    ):
+        return True
+
+    return False
+
+
+def _find_price(
+    soup,
+) -> Decimal | None:
+    for selector in PRICE_SELECTORS:
+        price_element = soup.select_one(
+            selector
+        )
+
+        if price_element is None:
+            continue
+
+        price_text = price_element.get_text(
+            strip=True
+        )
+
+        if not price_text:
+            continue
+
+        try:
+            return clean_price(
+                price_text
+            )
+
+        except (
+            InvalidOperation,
+            ValueError,
+        ):
+            logger.debug(
+                "Amazon price parse failed | "
+                "selector=%s | text=%s",
+                selector,
+                price_text,
+            )
+
+    return None
 
 
 def scrape_amazon(
@@ -31,136 +166,62 @@ def scrape_amazon(
 ) -> ScrapeResult:
 
     try:
-        response, soup = fetch_page(url)
+        response, soup = fetch_page(
+            url
+        )
 
-        title = get_page_title(soup)
-
-
-        # ==========================================
-        # BOT / CHALLENGE DETECTION
-        # ==========================================
+        title = get_page_title(
+            soup
+        )
 
         page_text = soup.get_text(
             " ",
             strip=True,
-        ).lower()
-
-        bot_phrases = (
-            "enter the characters you see below",
-            "sorry, we just need to make sure",
-            "type the characters you see",
         )
 
-        if any(
-            phrase in page_text
-            for phrase in bot_phrases
+        # -------------------------------------------------
+        # BOT / CHALLENGE DETECTION
+        # -------------------------------------------------
+
+        if _is_bot_page(
+            title,
+            page_text,
         ):
+            logger.warning(
+                "Amazon bot/challenge page | "
+                "status=%s | title=%s | url=%s",
+                response.status_code,
+                title,
+                url,
+            )
+
             return ScrapeResult(
                 success=False,
                 retailer="Amazon",
+                price=None,
+                in_stock=None,
                 status_code=response.status_code,
                 page_title=title,
-                error="Amazon returned a bot/challenge page",
+                error=(
+                    "Amazon temporarily blocked the "
+                    "price check. Please try again later."
+                ),
             )
 
-        # ==========================================
-        # AVAILABILITY TEXT
-        # ==========================================
+        # -------------------------------------------------
+        # STOCK DETECTION
+        # -------------------------------------------------
 
-        availability_text = ""
-
-        for selector in AVAILABILITY_SELECTORS:
-
-            element = soup.select_one(selector)
-
-            if element:
-
-                text = element.get_text(
-                    " ",
-                    strip=True,
-                )
-
-                if text:
-                    availability_text = text.lower()
-                    break
-
-        # ==========================================
-        # BUY BUTTON
-        # ==========================================
-
-        has_buy_button = any(
-            soup.select_one(selector) is not None
-            for selector in BUY_BUTTON_SELECTORS
-        )
-
-        # ==========================================
-        # DETERMINE STOCK
-        # ==========================================
-
-        in_stock = None
-
-        out_of_stock_phrases = (
-            "currently unavailable",
-            "temporarily out of stock",
-            "out of stock",
-            "we don't know when or if this item will be back in stock",
-            "no featured offers available",
-        )
-
-        in_stock_phrases = (
-            "in stock",
-            "available to ship",
-        )
-
-        if any(
-            phrase in availability_text
-            for phrase in out_of_stock_phrases
+        if _is_out_of_stock(
+            soup
         ):
-            in_stock = False
-
-        elif any(
-            phrase in availability_text
-            for phrase in in_stock_phrases
-        ):
-            in_stock = True
-
-        elif has_buy_button:
-            in_stock = True
-
-        # ==========================================
-        # PRICE
-        # ==========================================
-
-        price = None
-
-        for selector in PRICE_SELECTORS:
-
-            price_element = soup.select_one(
-                selector
+            logger.info(
+                "Amazon product out of stock | "
+                "status=%s | title=%s | url=%s",
+                response.status_code,
+                title,
+                url,
             )
-
-            if price_element:
-
-                raw_price = price_element.get_text(
-                    strip=True
-                )
-
-                try:
-
-                    price = clean_price(
-                        raw_price
-                    )
-
-                    break
-
-                except Exception:
-                    continue
-
-        # ==========================================
-        # OUT OF STOCK
-        # ==========================================
-
-        if in_stock is False:
 
             return ScrapeResult(
                 success=True,
@@ -169,59 +230,85 @@ def scrape_amazon(
                 in_stock=False,
                 status_code=response.status_code,
                 page_title=title,
+                error=None,
             )
 
-        # ==========================================
-        # IN STOCK
-        # ==========================================
+        # -------------------------------------------------
+        # PRICE DETECTION
+        # -------------------------------------------------
 
-        if in_stock is True and price is not None:
+        price = _find_price(
+            soup
+        )
 
-            return ScrapeResult(
-                success=True,
-                retailer="Amazon",
-                price=price,
-                in_stock=True,
-                status_code=response.status_code,
-                page_title=title,
+        if price is None:
+            availability = (
+                _get_availability_text(
+                    soup
+                )
             )
 
-        # ==========================================
-        # UNKNOWN AVAILABILITY + PRICE
-        # ==========================================
-
-        if price is not None:
+            logger.warning(
+                "Amazon price not found | "
+                "status=%s | title=%s | "
+                "availability=%s | url=%s",
+                response.status_code,
+                title,
+                availability[:250],
+                url,
+            )
 
             return ScrapeResult(
-                success=True,
+                success=False,
                 retailer="Amazon",
-                price=price,
+                price=None,
                 in_stock=None,
                 status_code=response.status_code,
                 page_title=title,
+                error=(
+                    "Amazon returned the product page, "
+                    "but the current price could not "
+                    "be determined."
+                ),
             )
 
-        # ==========================================
-        # NOTHING RELIABLE
-        # ==========================================
+        # -------------------------------------------------
+        # SUCCESS
+        # -------------------------------------------------
+
+        logger.info(
+            "Amazon scrape successful | "
+            "status=%s | price=%s | "
+            "title=%s",
+            response.status_code,
+            price,
+            title,
+        )
+
+        return ScrapeResult(
+            success=True,
+            retailer="Amazon",
+            price=price,
+            in_stock=True,
+            status_code=response.status_code,
+            page_title=title,
+            error=None,
+        )
+
+    except Exception as exc:
+        logger.exception(
+            "Amazon scraper exception | "
+            "url=%s",
+            url,
+        )
 
         return ScrapeResult(
             success=False,
             retailer="Amazon",
             price=None,
-            in_stock=in_stock,
-            status_code=response.status_code,
-            page_title=title,
+            in_stock=None,
             error=(
-                "Amazon price and availability "
-                "could not be determined"
+                "Amazon price check failed: "
+                f"{type(exc).__name__}"
             ),
-        )
-
-    except Exception as exc:
-
-        return ScrapeResult(
-            success=False,
-            retailer="Amazon",
-            error=str(exc),
         )
