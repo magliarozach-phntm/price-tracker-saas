@@ -28,7 +28,6 @@ OUT_OF_STOCK_PHRASES = [
     "currently unavailable",
     "temporarily out of stock",
     "we don't know when or if this item will be back in stock",
-    "no featured offers available",
 ]
 
 
@@ -209,14 +208,42 @@ def scrape_amazon(
             )
 
         # -------------------------------------------------
-        # STOCK DETECTION
+        # PRICE DETECTION
+        # -------------------------------------------------
+
+        price = _find_price(
+            soup
+        )
+
+        if price is not None:
+            logger.info(
+                "Amazon scrape successful | "
+                "status=%s | price=%s | "
+                "title=%s",
+                response.status_code,
+                price,
+                title,
+            )
+
+            return ScrapeResult(
+                success=True,
+                retailer="Amazon",
+                price=price,
+                in_stock=True,
+                status_code=response.status_code,
+                page_title=title,
+                error=None,
+            )
+
+        # -------------------------------------------------
+        # OUT-OF-STOCK DETECTION
         # -------------------------------------------------
 
         if _is_out_of_stock(
-            soup
+                soup
         ):
             logger.info(
-                "Amazon product out of stock | "
+                "Amazon product explicitly out of stock | "
                 "status=%s | title=%s | url=%s",
                 response.status_code,
                 title,
@@ -234,43 +261,35 @@ def scrape_amazon(
             )
 
         # -------------------------------------------------
-        # PRICE DETECTION
+        # UNKNOWN / PRICE NOT FOUND
         # -------------------------------------------------
 
-        price = _find_price(
+        availability = _get_availability_text(
             soup
         )
 
-        if price is None:
-            availability = (
-                _get_availability_text(
-                    soup
-                )
-            )
+        logger.warning(
+            "Amazon price not found | "
+            "status=%s | title=%s | "
+            "availability=%r | url=%s",
+            response.status_code,
+            title,
+            availability[:500],
+            url,
+        )
 
-            logger.warning(
-                "Amazon price not found | "
-                "status=%s | title=%s | "
-                "availability=%s | url=%s",
-                response.status_code,
-                title,
-                availability[:250],
-                url,
-            )
-
-            return ScrapeResult(
-                success=False,
-                retailer="Amazon",
-                price=None,
-                in_stock=None,
-                status_code=response.status_code,
-                page_title=title,
-                error=(
-                    "Amazon returned the product page, "
-                    "but the current price could not "
-                    "be determined."
-                ),
-            )
+        return ScrapeResult(
+            success=False,
+            retailer="Amazon",
+            price=None,
+            in_stock=None,
+            status_code=response.status_code,
+            page_title=title,
+            error=(
+                "Amazon returned the product page, "
+                "but the current price could not be determined."
+            ),
+        )
 
         # -------------------------------------------------
         # SUCCESS
