@@ -7,7 +7,7 @@ from app.core.emailer import (
     send_email,
     send_stock_email,
 )
-from app.core.emailer import send_email
+
 from app.models import TrackedProduct, PriceHistory
 from app.services.scraper import scrape_product
 from app.services.tracking.models import ProductCheckResult

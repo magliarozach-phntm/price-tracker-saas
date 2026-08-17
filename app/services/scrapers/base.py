@@ -28,7 +28,7 @@ HEADERS = {
 }
 
 
-@dataclass(slots=True)
+@dataclass
 class ScrapeResult:
     success: bool
     retailer: str
@@ -74,16 +74,7 @@ def fetch_page(
                     response.url,
                 )
 
-                with open(
-                        "walmart_debug.html",
-                        "w",
-                        encoding="utf-8",
-                ) as debug_file:
-                    debug_file.write(response.text)
-
-                raise RuntimeError(
-                    f"Retailer returned a bot/challenge page: {title}"
-                )
+                
 
             return response, soup
 
