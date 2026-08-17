@@ -52,11 +52,26 @@ def _is_bot_page(
 
 def _is_out_of_stock(
     page_text: str,
+    title: str,
 ) -> bool:
-    text = page_text.lower()
+
+    product_name = title.split(
+        " : Target"
+    )[0].strip()
+
+    start_index = page_text.find(
+        product_name
+    )
+
+    if start_index == -1:
+        return False
+
+    product_section = page_text[
+        start_index:start_index + 2000
+    ].lower()
 
     return any(
-        phrase in text
+        phrase in product_section
         for phrase in OUT_OF_STOCK_PHRASES
     )
 
@@ -278,6 +293,8 @@ def _find_price_from_selectors(
 
 def _find_price(
     soup,
+    page_text: str,
+    title: str,
 ) -> Decimal | None:
 
     price = _find_price_from_json_ld(
@@ -294,8 +311,16 @@ def _find_price(
     if price is not None:
         return price
 
-    return _find_price_from_selectors(
+    price = _find_price_from_selectors(
         soup
+    )
+
+    if price is not None:
+        return price
+
+    return _find_price_from_page_text(
+        page_text,
+        title,
     )
 
 
@@ -360,11 +385,14 @@ def scrape_target(
             )
 
         price = _find_price(
-            soup
+            soup,
+            page_text,
+            title,
         )
 
         out_of_stock = _is_out_of_stock(
-            page_text
+            page_text,
+            title,
         )
 
         if price is not None:
@@ -428,3 +456,47 @@ def scrape_target(
                 f"{type(exc).__name__}"
             ),
         )
+
+def _find_price_from_page_text(
+    page_text: str,
+    title: str,
+) -> Decimal | None:
+
+    # Target's HTML contains the selected product's
+    # visible price near the product title.
+    product_name = title.split(" : Target")[0].strip()
+
+    start_index = page_text.find(
+        product_name
+    )
+
+    if start_index == -1:
+        return None
+
+    # Only inspect the area immediately following
+    # the product title so prices from recommended
+    # products aren't accidentally selected.
+    product_section = page_text[
+        start_index:start_index + 1500
+    ]
+
+    match = re.search(
+        r"\$([0-9]+(?:,[0-9]{3})*(?:\.[0-9]{2}))",
+        product_section,
+    )
+
+    if not match:
+        return None
+
+    price = _extract_decimal(
+        match.group(1)
+    )
+
+    if price is not None:
+        logger.info(
+            "Target price found in product text | "
+            "price=%s",
+            price,
+        )
+
+    return price
