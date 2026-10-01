@@ -78,14 +78,14 @@ This approach allows the application to work with product information that is po
 
 ## ⏱️ Automated Monitoring
 
-MAG PriceWatch includes background scheduling through APScheduler.
+MAG PriceWatch runs hourly Target monitoring in a separate Railway Cron worker.
 
-The scheduler integrates with the same tracking service used by manual **Check Now** requests, allowing tracked products to be checked automatically.
+The worker uses the same tracking service as manual **Check Now** requests, preserving PostgreSQL price history and price/stock alerts. FastAPI serves the website without starting a scheduler. The worker checks Target products once and exits; saved Amazon products are skipped.
 
 The architecture is designed so manual and scheduled checks share the same tracking pipeline.
 
 ```text
-APScheduler
+Railway Cron (hourly) → python -m app.worker
      ↓
 Tracked Products
      ↓
@@ -175,7 +175,7 @@ This provides the foundation for historical price analytics and future price tre
 
 ### Background Processing
 
-- APScheduler
+- Railway Cron (hourly) → python -m app.worker
 
 ### Database Migrations
 
@@ -191,7 +191,7 @@ This provides the foundation for historical price analytics and future price tre
 ### Deployment
 
 - Railway
-- Railpack
+- Docker (Python + Chromium)
 - PostgreSQL
 - GitHub
 
@@ -228,7 +228,6 @@ price-tracker-saas/
 │   ├── schemas/
 │   │
 │   ├── services/
-│   │   ├── scheduler/
 │   │   ├── scrapers/
 │   │   │   ├── amazon.py
 │   │   │   ├── base.py
@@ -241,6 +240,8 @@ price-tracker-saas/
 │   │   └── css/
 │   │
 │   ├── templates/
+│   │
+│   ├── worker.py
 │   │
 │   └── web/
 │       ├── auth.py
@@ -287,12 +288,6 @@ Railway runs migrations against the production PostgreSQL database as part of th
 ## 🧪 Testing
 
 The project includes an automated pytest suite covering major application functionality.
-
-Current test status:
-
-```text
-30 passed
-```
 
 Tests use an isolated in-memory SQLite database:
 
@@ -395,12 +390,14 @@ http://127.0.0.1:8000
 
 MAG PriceWatch is deployed on Railway.
 
+See [the Railway Cron migration guide](docs/railway-cron.md) for the two-service configuration, shared database and email variables, cutover verification, and rollback.
+
 Production consists of:
 
 ```text
 GitHub
    ↓
-Railway / Railpack
+Railway / Docker
    ↓
 Python Environment
    ↓
@@ -465,7 +462,7 @@ Planned development includes:
 - [x] Railway deployment
 - [x] Price history
 - [x] Stock-state tracking
-- [x] APScheduler integration
+- [x] Hourly Railway Cron worker
 - [x] Automated test suite
 - [x] Production verification of scheduled price checks
 - [/] Email notifications (implement, requires paid deployment)

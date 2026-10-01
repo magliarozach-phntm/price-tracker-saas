@@ -14,10 +14,6 @@ from app.web.settings import router as settings_router
 from fastapi import Request
 from contextlib import asynccontextmanager
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-from app.services.scheduler.scheduler import (
-    start_scheduler,
-    stop_scheduler,
-)
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.web import templates
 from app.web.context import template_context
@@ -31,15 +27,11 @@ async def lifespan(app: FastAPI):
         "Starting MAG PriceWatch"
     )
 
-    start_scheduler()
-
     yield
 
     logger.info(
         "Shutting down MAG PriceWatch"
     )
-
-    stop_scheduler()
 
 app = FastAPI(
     title="Price Tracker SaaS",

@@ -1,0 +1,9 @@
+# Select /railway.web.toml as the website service's Railway Config File.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "bash start.sh"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

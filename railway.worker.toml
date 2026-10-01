@@ -1,0 +1,10 @@
+# Select /railway.worker.toml as a SEPARATE service's Railway Config File.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "python -m app.worker"
+cronSchedule = "0 * * * *"
+restartPolicyType = "NEVER"
+numReplicas = 1
