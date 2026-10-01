@@ -31,7 +31,9 @@ def check_product(
 
     now = datetime.now(UTC)
 
-    product.is_in_stock = result.in_stock
+    # Missing retailer availability must not erase the last known stock state.
+    if result.in_stock is not None:
+        product.is_in_stock = result.in_stock
     product.last_checked = now
 
     if result.price is not None:
